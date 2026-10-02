@@ -1,0 +1,168 @@
+// Prisma schema for Estudia Notes.
+// userId columns hold the Supabase auth.users UUID taken from the verified JWT.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum JobStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum SourceType {
+  TEXT
+  PDF
+  DOCX
+  IMAGE
+}
+
+enum Difficulty {
+  STANDARD
+  HARD
+  CHALLENGE
+}
+
+enum QuestionType {
+  MCQ
+  SHORT
+}
+
+model Note {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @db.Uuid
+  title       String
+  sourceType  SourceType
+  storagePath String?
+  rawText     String?
+  status      JobStatus  @default(PROCESSING)
+  error       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  summary Summary?
+  exams   Exam[]
+
+  @@index([userId, createdAt])
+  @@map("notes")
+}
+
+model Summary {
+  id        String   @id @default(uuid()) @db.Uuid
+  noteId    String   @unique @db.Uuid
+  overview  String
+  model     String
+  createdAt DateTime @default(now())
+
+  note   Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  topics Topic[]
+
+  @@map("summaries")
+}
+
+model Topic {
+  id        String   @id @default(uuid()) @db.Uuid
+  summaryId String   @db.Uuid
+  name      String
+  order     Int
+  keyPoints String[]
+  // [{ term, definition }]
+  keyTerms  Json     @default("[]")
+
+  summary   Summary    @relation(fields: [summaryId], references: [id], onDelete: Cascade)
+  questions Question[]
+
+  @@unique([summaryId, order])
+  @@map("topics")
+}
+
+model Exam {
+  id            String     @id @default(uuid()) @db.Uuid
+  noteId        String     @db.Uuid
+  userId        String     @db.Uuid
+  difficulty    Difficulty
+  questionCount Int
+  focusTopicIds String[]   @db.Uuid
+  status        JobStatus  @default(PROCESSING)
+  error         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  note      Note       @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  questions Question[]
+  attempts  Attempt[]
+
+  @@index([noteId])
+  @@index([userId, createdAt])
+  @@map("exams")
+}
+
+model Question {
+  id           String       @id @default(uuid()) @db.Uuid
+  examId       String       @db.Uuid
+  topicId      String?      @db.Uuid
+  order        Int
+  type         QuestionType
+  prompt       String
+  // MCQ only; empty for SHORT
+  choices      String[]
+  correctIndex Int?
+  // SHORT only
+  modelAnswer  String?
+  rubric       String?
+  explanation  String
+
+  exam    Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  topic   Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  answers Answer[]
+
+  @@unique([examId, order])
+  @@index([topicId])
+  @@map("questions")
+}
+
+model Attempt {
+  id          String    @id @default(uuid()) @db.Uuid
+  examId      String    @db.Uuid
+  userId      String    @db.Uuid
+  status      JobStatus @default(PROCESSING)
+  error       String?
+  // fraction 0..1, set once grading finishes
+  score       Float?
+  submittedAt DateTime  @default(now())
+
+  exam    Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  answers Answer[]
+
+  @@index([examId])
+  @@index([userId, submittedAt])
+  @@map("attempts")
+}
+
+model Answer {
+  id            String   @id @default(uuid()) @db.Uuid
+  attemptId     String   @db.Uuid
+  questionId    String   @db.Uuid
+  selectedIndex Int?
+  text          String?
+  // 0, 0.5 or 1; null until graded
+  score         Float?
+  isCorrect     Boolean?
+  feedback      String?
+
+  attempt  Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+  @@map("answers")
+}
