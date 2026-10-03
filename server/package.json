@@ -9,7 +9,8 @@
     "typecheck": "tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "smoke:ai": "node scripts/smoke-ai.ts"
   },
   "keywords": [],
   "author": "",
