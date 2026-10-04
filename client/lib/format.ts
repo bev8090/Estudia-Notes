@@ -10,6 +10,7 @@ export const SOURCE_LABEL: Record<SourceType, string> = {
   TEXT: "Text",
   PDF: "PDF",
   DOCX: "Word",
+  PPTX: "Slides",
   IMAGE: "Photos",
 };
 

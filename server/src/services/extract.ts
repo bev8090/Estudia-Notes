@@ -1,8 +1,9 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import mammoth from "mammoth";
 import { HttpError } from "../lib/errors.ts";
+import { extractSlides, formatSlides } from "./pptx.ts";
 
-export type SourceType = "TEXT" | "PDF" | "DOCX" | "IMAGE";
+export type SourceType = "TEXT" | "PDF" | "DOCX" | "PPTX" | "IMAGE";
 
 // Everything the summarizer needs, prepared during the upload request so bad files
 // are rejected immediately with a 400 instead of failing later in the background.
@@ -20,7 +21,20 @@ export const MAX_IMAGES = 10;
 export const MAX_IMAGE_BYTES = 7 * 1024 * 1024; // Claude's limit is 10 MB after base64 (+33%)
 export const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // stays under Claude's 32 MB request limit
 
-type Kind = "pdf" | "docx" | "text" | "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "heic";
+type Kind =
+  | "pdf"
+  | "docx"
+  | "pptx"
+  | "text"
+  | "image/jpeg"
+  | "image/png"
+  | "image/gif"
+  | "image/webp"
+  | "heic"
+  | "legacy-office";
+
+// Pre-2007 Office files (.ppt, .doc) start with this signature (the OLE compound format).
+const OLE_SIGNATURE = Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
 
 // Identify a file from its first bytes ("magic numbers") rather than trusting the
 // browser-supplied MIME type or extension, which can be missing or wrong.
@@ -33,8 +47,10 @@ export function sniff(file: UploadedFile): Kind | null {
   if (ascii(0, 4) === "GIF8") return "image/gif";
   if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "image/webp";
   if (ascii(4, 8) === "ftyp" && /^(heic|heix|mif1|msf1|heim|heis)$/.test(ascii(8, 12))) return "heic";
-  // .docx files are zip archives; the extension tells it apart from other zips.
+  // .docx and .pptx files are zip archives; the extension tells them apart from other zips.
   if (ascii(0, 4) === "PK\x03\x04" && /\.docx$/i.test(file.originalname)) return "docx";
+  if (ascii(0, 4) === "PK\x03\x04" && /\.pptx$/i.test(file.originalname)) return "pptx";
+  if (b.subarray(0, 8).equals(OLE_SIGNATURE)) return "legacy-office";
   if (/\.(txt|md|markdown)$/i.test(file.originalname) && !b.includes(0)) return "text";
   return null;
 }
@@ -55,8 +71,14 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
     if (kind === "heic") {
       throw new HttpError(400, `${f.originalname} is a HEIC photo. Please convert it to JPEG or PNG first.`);
     }
+    if (kind === "legacy-office") {
+      throw new HttpError(400, `${f.originalname} is an older Office file. Save it as .pptx, .docx or PDF and upload that.`);
+    }
     if (!kind) {
-      throw new HttpError(400, `${f.originalname} isn't a supported file. Use PDF, Word (.docx), .txt, .md, or JPEG/PNG/WebP/GIF images.`);
+      throw new HttpError(
+        400,
+        `${f.originalname} isn't a supported file. Use PDF, Word (.docx), PowerPoint (.pptx), .txt, .md, or JPEG/PNG/WebP/GIF images.`,
+      );
     }
     return kind;
   });
@@ -86,6 +108,18 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
       });
       return fromText("DOCX", value);
     }
+    case "pptx": {
+      const slides = extractSlides(file.buffer);
+      // Count only real slide text and notes, not the "Slide 1:" labels added for Claude.
+      const contentChars = slides.reduce((sum, s) => sum + s.text.length + s.notes.length, 0);
+      if (contentChars < MIN_TEXT_CHARS) {
+        throw new HttpError(
+          400,
+          "We couldn't find enough text in these slides. If they're mostly pictures or diagrams, export them as a PDF (File > Export > PDF) and upload that instead.",
+        );
+      }
+      return fromText("PPTX", formatSlides(slides));
+    }
     default:
       return fromText("TEXT", file.buffer.toString("utf8"));
   }
@@ -105,9 +139,12 @@ function fromText(sourceType: SourceType, text: string): NoteInput {
     content: [
       {
         type: "text",
-        // Tags mark where the student's notes start and end, so text inside them is
+        // Tags mark where the student's material starts and ends, so text inside them is
         // treated as material to summarize, never as instructions to follow.
-        text: `<notes>\n${trimmed}\n</notes>\n\nTurn the notes above into a study guide for the student's exam.`,
+        text:
+          sourceType === "PPTX"
+            ? `<slides>\n${trimmed}\n</slides>\n\nThese are the text and speaker notes from the student's lecture slides, slide by slide. Turn them into a study guide for the student's exam.`
+            : `<notes>\n${trimmed}\n</notes>\n\nTurn the notes above into a study guide for the student's exam.`,
       },
     ],
   };

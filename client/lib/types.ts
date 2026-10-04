@@ -1,7 +1,7 @@
 // Shapes of the JSON the Express API returns. Keep in sync with server/src/routes.
 
 export type JobStatus = "PROCESSING" | "READY" | "FAILED";
-export type SourceType = "TEXT" | "PDF" | "DOCX" | "IMAGE";
+export type SourceType = "TEXT" | "PDF" | "DOCX" | "PPTX" | "IMAGE";
 export type Difficulty = "STANDARD" | "HARD" | "CHALLENGE";
 export type QuestionType = "MCQ" | "SHORT";
 

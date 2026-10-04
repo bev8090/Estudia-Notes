@@ -14,13 +14,16 @@ const MIN_CHARS = 50;
 const MAX_CHARS = 300_000;
 const MAX_IMAGES = 10;
 const MAX_TOTAL_MB = 20;
-const ACCEPT = ".pdf,.docx,.txt,.md,image/jpeg,image/png,image/webp,image/gif";
+const ACCEPT = ".pdf,.docx,.pptx,.txt,.md,image/jpeg,image/png,image/webp,image/gif";
 const isImage = (f: File) => /^image\/(jpeg|png|webp|gif)$/.test(f.type);
 
 function checkFiles(files: File[]): string | undefined {
   if (files.length === 0) return "Choose a file to upload.";
   if (files.some((f) => /\.(heic|heif)$/i.test(f.name))) {
     return "HEIC photos aren't supported. Please convert them to JPEG or PNG first.";
+  }
+  if (files.some((f) => /\.(ppt|doc)$/i.test(f.name))) {
+    return "Older .ppt and .doc files aren't supported. Save them as .pptx, .docx or PDF first.";
   }
   const totalMb = files.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024;
   if (totalMb > MAX_TOTAL_MB) return `Uploads are limited to ${MAX_TOTAL_MB} MB in total.`;
@@ -146,7 +149,7 @@ export function NewNoteForm() {
           >
             <p className="text-sm font-medium text-zinc-800">Drop files here or click to choose</p>
             <p className="mt-1 text-xs text-zinc-500">
-              One PDF, Word (.docx), .txt or .md file, or up to 10 photos (JPEG, PNG, WebP). 20 MB max.
+              One PDF, Word (.docx), PowerPoint (.pptx), .txt or .md file, or up to 10 photos (JPEG, PNG, WebP). 20 MB max.
             </p>
             <input
               ref={fileInput}

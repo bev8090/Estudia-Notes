@@ -12,7 +12,7 @@ export default async function Home() {
         Turn your notes into practice exams
       </h1>
       <p className="mt-4 max-w-md text-zinc-600">
-        Upload a PDF, Word doc, photo or pasted text. Get a clear summary, then test yourself at
+        Upload a PDF, Word doc, PowerPoint slides, photos or pasted text. Get an exam-focused study guide, then test yourself at
         the difficulty you choose.
       </p>
       <Link

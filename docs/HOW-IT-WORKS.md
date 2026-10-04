@@ -1,6 +1,6 @@
 # How Estudia Notes works
 
-Estudia Notes turns a student's notes into a study summary and practice exams. You upload notes (pasted text, a PDF, a Word document, or photos of handwritten pages). The app summarizes them into topics, then generates exams at three difficulty levels and grades your answers, including written ones.
+Estudia Notes turns a student's notes into a study summary and practice exams. You upload notes (pasted text, a PDF, a Word document, PowerPoint slides, or photos of handwritten pages). The app turns them into an exam-focused study guide, then generates exams at three difficulty levels and grades your answers, including written ones.
 
 This document explains how the pieces fit together and why each major decision was made.
 
@@ -74,7 +74,7 @@ sequenceDiagram
     end
 ```
 
-### 3a. Adding notes → summary
+### 3a. Adding notes → study guide
 
 *Code: `server/src/routes/notes.ts`, `services/extract.ts`, `services/ai/summarize.ts`*
 
@@ -82,6 +82,12 @@ sequenceDiagram
 2. **Each format is prepared for Claude:**
    - Text and `.txt`/`.md` files are sent as text, wrapped in `<notes>` tags.
    - Word files are converted to plain text with the `mammoth` library.
+   - **PowerPoint (.pptx)** files are read by the app itself (`services/pptx.ts`), because Claude can't open them. A .pptx is a zip archive of XML files, so the app unzips it in memory and:
+     - reads slides in **presentation order**, which is listed in `presentation.xml` and can differ from the file names after slides are reordered;
+     - takes each slide's text **plus its speaker notes**, where lecturers often write the real explanations and hints like "this will be on the exam";
+     - skips hidden slides and drops auto-filled slide numbers and dates.
+
+     Only the needed XML files are unzipped, with a size cap, so a "zip bomb" (a small file that expands to gigabytes) is rejected. Pictures and diagrams on slides aren't read; if a deck has too little text, the app suggests exporting it as a PDF, which Claude reads with visuals. Old `.ppt`/`.doc` files get a "save as .pptx/.docx or PDF" message.
    - PDFs and photos are sent to Claude **directly**. Claude reads scanned pages and handwriting itself, so no separate OCR library is needed. Photos are labeled "Page 1:", "Page 2:" and so on, so their order is clear.
 3. **Claude returns a study guide as structured JSON**, not just a summary. The prompt asks Claude to act as a tutor preparing the student for an exam: explain how ideas connect rather than just listing facts, and judge what's exam-worthy from the notes themselves (emphasis, definitions, processes, formulas, comparisons). The guide contains:
    - a title and an overview;
@@ -196,7 +202,7 @@ server/src/
   server.ts          starts the app; marks jobs interrupted by a restart as failed
   app.ts             wires routes, the auth check and the error handler together
   routes/            HTTP endpoints: read the request, check access, respond
-  services/          the work behind each endpoint (background jobs, file prep)
+  services/          the work behind each endpoint (background jobs, file prep, PowerPoint reading)
     ai/              everything that talks to Claude: prompts and schemas
   domain/            pure logic (validate/shuffle questions, scoring): no database, no network
   middleware/        auth (who are you?) and limits (rate limit, daily cap)
@@ -221,7 +227,7 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 
 | Layer | What it checks | Command |
 |---|---|---|
-| **Unit tests** (`test/domain.test.ts`, `test/extract.test.ts`) | Shuffling keeps answers correct; malformed questions are rejected; scoring math; file-type detection | `npm test` in `server/` |
+| **Unit tests** (`test/domain.test.ts`, `test/extract.test.ts`, `test/pptx.test.ts`) | Shuffling keeps answers correct; malformed questions are rejected; scoring and progress math; file-type detection; PowerPoint slide order, hidden slides, speaker notes and zip-bomb protection | `npm test` in `server/` |
 | **API tests** (`test/api.test.ts`) | The full note → exam → attempt flow over real HTTP against the real database; users can't see each other's data; the answer key doesn't leak. Login and Claude are replaced with stand-ins, so this is free and repeatable | `npm test` in `server/` |
 | **AI smoke test** (`scripts/smoke-ai.ts`) | All three real AI steps on sample notes; prints the output so you can judge its quality (a few cents per run) | `npm run smoke:ai` in `server/` |
 | **Type checks and builds** | Code compiles; the frontend builds for production | `npm run typecheck` (server), `npx next build` (client) |
@@ -233,6 +239,7 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 - **Background jobs run inside the server process.** If the server restarts mid-job, that job is marked failed at startup and the user retries. Running several servers would need a real job queue (for example, pg-boss or BullMQ).
 - **The daily limit counts existing rows,** so deleting notes frees up quota. A usage-log table would close that gap and also record real cost per user.
 - **Failed uploads must be re-uploaded,** because files aren't stored.
+- **Pictures on PowerPoint slides aren't read,** only text and speaker notes. Diagram-heavy decks work better exported as PDF.
 - **Weak-topic exams stay within one note,** because exams are generated from a single note's summary. Practicing weak topics across several notes at once would need a multi-note exam.
 - **Ideas for later:** flashcards with spaced repetition, "chat with your notes", timed exam mode, and combining several notes into one exam.
 
@@ -247,3 +254,4 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 | 3. Exams | Exam generation by difficulty and length, output validation, server-side shuffling, the take-exam page |
 | 4. Grading + review | Multiple choice graded in code, written answers graded by AI, results page with explanations and topics to review |
 | 5. Progress | Per-topic accuracy from recent answers, score-history chart, "Practice weak topics" and "Practice missed topics" exams |
+| 6. Study guides + slides | Exam-focused study guides (priorities, importance, "Be able to…" tips, common mistakes) that also steer exam questions; PowerPoint uploads |

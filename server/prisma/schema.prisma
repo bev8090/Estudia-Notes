@@ -23,6 +23,7 @@ enum SourceType {
   TEXT
   PDF
   DOCX
+  PPTX
   IMAGE
 }
 
