@@ -31,7 +31,7 @@ export default async function Home() {
     <div className="bg-notebook flex flex-1 flex-col">
       <header className="sticky top-0 z-30 border-b border-brand-100/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Logo href={signedIn ? "/dashboard" : "/"} />
+          <Logo />
           <nav className="flex items-center gap-1 text-sm sm:gap-2">
             <a href="#how-it-works" className="hidden rounded-lg px-3 py-2 text-zinc-600 hover:text-zinc-900 md:inline">
               How it works
@@ -262,7 +262,7 @@ export default async function Home() {
 
       <footer className="border-t border-brand-100 bg-white/80">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-zinc-500 sm:px-6">
-          <Logo href={signedIn ? "/dashboard" : "/"} />
+          <Logo />
           <p>Built with Next.js, Express, Supabase and Claude.</p>
         </div>
       </footer>

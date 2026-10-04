@@ -27,7 +27,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
         <header className="sticky top-0 z-30 border-b border-brand-100/80 bg-white/85 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
             <div className="flex items-center gap-4">
-              <Logo href="/dashboard" compact />
+              <Logo compact />
               <span className="hidden h-6 w-px bg-zinc-200 md:block" aria-hidden="true" />
               <AppNav />
             </div>
