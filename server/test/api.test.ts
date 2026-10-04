@@ -158,6 +158,18 @@ describe("full flow: note -> exam -> attempt", () => {
     const noteAfter = await request(app).get(`/api/notes/${noteId}`).set(as(alice));
     expect(noteAfter.body.exams[0]).toMatchObject({ id: examId, attemptCount: 1, bestScore: 0.7 });
 
+    // Progress: one graded attempt; topics carry accuracy; Bob sees nothing of Alice's.
+    const stats = await request(app).get("/api/stats").set(as(alice)).expect(200);
+    expect(stats.body.totals).toMatchObject({ attempts: 1, averageScore: 0.7, questionsAnswered: 5, topicsPracticed: 2 });
+    expect(stats.body.history).toHaveLength(1);
+    const statTopics = stats.body.notes[0].topics;
+    expect(stats.body.notes[0].noteId).toBe(noteId);
+    // Mitochondria: one partial short answer (0.5). Cells: 3 right + 1 blank of 4 (0.75), weakest first.
+    expect(statTopics.map((t: { name: string; accuracy: number }) => [t.name, t.accuracy])).toEqual([["Mitochondria", 0.5], ["Cells", 0.75]]);
+    expect(statTopics.find((t: { name: string }) => t.name === "Cells").weak).toBe(false);
+    const bobStats = await request(app).get("/api/stats").set(as(bob)).expect(200);
+    expect(bobStats.body).toMatchObject({ totals: { attempts: 0, averageScore: null }, history: [], notes: [] });
+
     // 4. Deleting the note removes everything under it.
     await request(app).delete(`/api/notes/${noteId}`).set(as(alice)).expect(204);
     await request(app).get(`/api/exams/${examId}`).set(as(alice)).expect(404);

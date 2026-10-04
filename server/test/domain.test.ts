@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildQuestionRows, InvalidExamError, shortAnswerCount, shuffleChoices, type GeneratedQuestion } from "../src/domain/exam.ts";
 import { attemptScore, gradeMcq } from "../src/domain/grading.ts";
+import { RECENT_ANSWERS, topicStats } from "../src/domain/stats.ts";
 
 const mcq = (overrides: Partial<GeneratedQuestion> = {}): GeneratedQuestion => ({
   type: "MCQ",
@@ -94,5 +95,33 @@ describe("grading", () => {
 
   it("uses about 30% short answer", () => {
     expect([5, 10, 25].map(shortAnswerCount)).toEqual([2, 3, 8]);
+  });
+});
+
+describe("topicStats", () => {
+  const at = (day: number) => new Date(2026, 0, day);
+
+  it("computes accuracy per topic and flags weak ones", () => {
+    const stats = topicStats([
+      { topicId: "a", score: 1, submittedAt: at(1) },
+      { topicId: "a", score: 1, submittedAt: at(2) },
+      { topicId: "b", score: 0, submittedAt: at(1) },
+      { topicId: "b", score: 0.5, submittedAt: at(3) },
+      { topicId: null, score: 0, submittedAt: at(1) }, // questions without a topic are ignored
+    ]);
+    const byId = Object.fromEntries(stats.map((s) => [s.topicId, s]));
+    expect(byId.a).toMatchObject({ answered: 2, accuracy: 1, weak: false });
+    expect(byId.b).toMatchObject({ answered: 2, accuracy: 0.25, weak: true, lastPracticed: at(3) });
+    expect(stats).toHaveLength(2);
+  });
+
+  it("doesn't call a topic weak from a single answer", () => {
+    expect(topicStats([{ topicId: "a", score: 0, submittedAt: at(1) }])[0].weak).toBe(false);
+  });
+
+  it("judges accuracy on recent answers, so improvement counts", () => {
+    const early = Array.from({ length: 10 }, (_, i) => ({ topicId: "a", score: 0, submittedAt: at(i + 1) }));
+    const recent = Array.from({ length: RECENT_ANSWERS }, (_, i) => ({ topicId: "a", score: 1, submittedAt: at(i + 20) }));
+    expect(topicStats([...early, ...recent])[0]).toMatchObject({ answered: 20, accuracy: 1, weak: false });
   });
 });

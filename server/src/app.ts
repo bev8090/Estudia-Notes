@@ -7,6 +7,7 @@ import { HttpError } from "./lib/errors.ts";
 import { requireAuth } from "./middleware/auth.ts";
 import { notesRouter } from "./routes/notes.ts";
 import { examsRouter } from "./routes/exams.ts";
+import { statsRouter } from "./routes/stats.ts";
 
 // Builds the Express app without starting it, so tests can send requests to it directly.
 export function createApp() {
@@ -31,6 +32,7 @@ export function createApp() {
   });
   app.use("/api/notes", notesRouter);
   app.use("/api", examsRouter);
+  app.use("/api", statsRouter);
 
   // Express 5 forwards errors thrown in async handlers here.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

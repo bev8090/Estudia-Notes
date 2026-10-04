@@ -44,7 +44,7 @@ export type PublicQuestion = {
   type: QuestionType;
   prompt: string;
   choices: string[];
-  topic: { name: string } | null;
+  topic: { id: string; name: string } | null;
 };
 
 export type ExamDetail = {
@@ -80,4 +80,32 @@ export type AttemptDetail = {
   submittedAt: string;
   exam: { id: string; difficulty: Difficulty; questionCount: number; note: { id: string; title: string } };
   questions: ReviewQuestion[];
+};
+
+export type TopicProgress = {
+  topicId: string;
+  name: string;
+  answered: number;
+  accuracy: number; // 0..1 over the most recent answers
+  lastPracticed: string;
+  weak: boolean;
+};
+
+export type ProgressStats = {
+  totals: {
+    attempts: number;
+    averageScore: number | null;
+    questionsAnswered: number;
+    topicsPracticed: number;
+    weakTopics: number;
+  };
+  history: {
+    attemptId: string;
+    score: number;
+    submittedAt: string;
+    difficulty: Difficulty;
+    questionCount: number;
+    noteTitle: string;
+  }[];
+  notes: { noteId: string; noteTitle: string; topics: TopicProgress[] }[];
 };

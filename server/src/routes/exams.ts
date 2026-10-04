@@ -20,7 +20,7 @@ export const publicQuestionSelect = {
   type: true,
   prompt: true,
   choices: true,
-  topic: { select: { name: true } },
+  topic: { select: { id: true, name: true } },
 } as const;
 
 const createExamBody = z.object({

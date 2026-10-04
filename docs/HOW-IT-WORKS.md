@@ -46,9 +46,9 @@ flowchart LR
 
 ---
 
-## 3. The three main flows
+## 3. The main flows
 
-All three follow the same pattern, because AI calls take 10–60 seconds:
+The three AI flows (3a–3c) follow the same pattern, because AI calls take 10–60 seconds:
 
 > **Save a row with status `PROCESSING` → respond immediately → do the AI work in the background → set the row to `READY` (or `FAILED` with a message). Meanwhile the page polls every few seconds until the status changes.**
 
@@ -111,7 +111,21 @@ sequenceDiagram
    - **Multiple choice is graded in code**: instant, free, and always consistent.
    - **Blank answers score 0** without calling the AI.
    - **Written answers are graded by Claude in a single call.** Each gets "full" (1 point), "partial" (0.5) or "none" (0), with a sentence or two of feedback.
-4. The review page shows every question with your answer, the correct answer, the explanation, and the topic it tested, plus a "Topics to review" list built from what you missed.
+4. The review page shows every question with your answer, the correct answer, the explanation, and the topic it tested, plus a "Topics to review" list built from what you missed. A **"Practice missed topics"** button creates a new exam focused on just those topics.
+
+### 3d. Tracking progress and practicing weak topics
+
+*Code: `server/src/routes/stats.ts`, `domain/stats.ts`, `client/app/(app)/progress/`*
+
+1. `GET /api/stats` gathers all of your graded attempts. Every answer is linked to its question, and every question to the topic it tests, so accuracy can be worked out per topic.
+2. **Accuracy uses your 10 most recent answers on each topic**, not all-time. Early mistakes shouldn't keep a topic "weak" after you've learned it. A topic is marked **Needs practice** below 70%, but only once it has at least 2 answers, so one wrong guess doesn't count.
+3. The progress page shows:
+   - **Headline numbers:** average score, exams taken, questions answered, and how many topics need practice.
+   - **A score-history line chart:** hover or use the arrow keys to see each attempt; it can also be viewed as a table.
+   - **Accuracy bars per topic**, grouped by note, weakest first.
+4. **"Practice weak topics"** reuses the exam generator's focus-topics option: it creates an exam on just that note's weak topics at the difficulty you choose. No new AI feature was needed, which is a good example of earlier design choices paying off.
+
+**Chart design choices:** the chart is plain SVG, with no charting library. It's a single series, so it uses one color and no legend (the heading names it). The color was checked with a contrast and color-blindness validator. Weak topics are marked with an icon and text, never color alone, and every number is also reachable without hovering.
 
 ---
 
@@ -185,7 +199,7 @@ server/test/         unit tests and API tests
 server/scripts/      smoke-ai.ts: a real run of all three AI steps
 
 client/
-  app/(app)/         signed-in pages: dashboard, notes, exams, attempts (shared header)
+  app/(app)/         signed-in pages: dashboard, notes, exams, attempts, progress (shared header)
   app/login/         login and sign-up page
   app/auth/callback/ finishes Google sign-in and email confirmation
   proxy.ts           refreshes the session; sends signed-out visitors to /login
@@ -213,7 +227,8 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 - **Background jobs run inside the server process.** If the server restarts mid-job, that job is marked failed at startup and the user retries. Running several servers would need a real job queue (for example, pg-boss or BullMQ).
 - **The daily limit counts existing rows,** so deleting notes frees up quota. A usage-log table would close that gap and also record real cost per user.
 - **Failed uploads must be re-uploaded,** because files aren't stored.
-- **Next phase:** a progress page with score history and per-topic accuracy across all attempts, plus a "Practice weak topics" button. The `focusTopicIds` option the exam generator already supports makes that button straightforward.
+- **Weak-topic exams stay within one note,** because exams are generated from a single note's summary. Practicing weak topics across several notes at once would need a multi-note exam.
+- **Ideas for later:** flashcards with spaced repetition, "chat with your notes", timed exam mode, and combining several notes into one exam.
 
 ---
 
@@ -225,3 +240,4 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 | 2. Notes + summaries | Uploads (text, PDF, Word, photos), file-type detection, AI summaries, background jobs with polling |
 | 3. Exams | Exam generation by difficulty and length, output validation, server-side shuffling, the take-exam page |
 | 4. Grading + review | Multiple choice graded in code, written answers graded by AI, results page with explanations and topics to review |
+| 5. Progress | Per-topic accuracy from recent answers, score-history chart, "Practice weak topics" and "Practice missed topics" exams |

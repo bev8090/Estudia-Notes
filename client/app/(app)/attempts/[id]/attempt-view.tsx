@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { DIFFICULTY_LABEL, LETTERS, percent, shortDate } from "@/lib/format";
 import type { AttemptDetail, ReviewQuestion } from "@/lib/types";
 import { BackLink, ErrorBox, ProcessingPanel, Spinner, buttonPrimary, buttonSecondary } from "@/components/ui";
+import { usePracticeExam } from "@/lib/use-practice-exam";
 
 type Outcome = "correct" | "partial" | "incorrect" | "unanswered";
 
@@ -31,6 +32,7 @@ export function AttemptView({ id }: { id: string }) {
     queryFn: () => apiFetch<AttemptDetail>(`/api/attempts/${id}`),
     refetchInterval: (query) => (query.state.data?.status === "PROCESSING" ? 2000 : false),
   });
+  const practice = usePracticeExam();
 
   if (isPending) {
     return (
@@ -76,11 +78,14 @@ export function AttemptView({ id }: { id: string }) {
   const outcomes = attempt.questions.map(outcomeOf);
   const count = (o: Outcome) => outcomes.filter((x) => x === o).length;
   // Topics with any missed or partly-right question, most-missed first.
-  const missedByTopic = new Map<string, number>();
+  const missedByTopic = new Map<string, { name: string; missed: number }>();
   attempt.questions.forEach((q, i) => {
-    if (outcomes[i] !== "correct" && q.topic) missedByTopic.set(q.topic.name, (missedByTopic.get(q.topic.name) ?? 0) + 1);
+    if (outcomes[i] === "correct" || !q.topic) return;
+    const entry = missedByTopic.get(q.topic.id) ?? { name: q.topic.name, missed: 0 };
+    entry.missed += 1;
+    missedByTopic.set(q.topic.id, entry);
   });
-  const weakTopics = [...missedByTopic.entries()].sort((a, b) => b[1] - a[1]);
+  const weakTopics = [...missedByTopic.entries()].sort((a, b) => b[1].missed - a[1].missed);
 
   return (
     <>
@@ -106,14 +111,31 @@ export function AttemptView({ id }: { id: string }) {
         </div>
         {weakTopics.length > 0 && (
           <div className="w-full border-t border-zinc-100 pt-4 text-sm">
-            <p className="font-medium text-zinc-800">Topics to review</p>
-            <ul className="mt-1.5 flex flex-wrap gap-2">
-              {weakTopics.map(([name, missed]) => (
-                <li key={name} className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-medium text-zinc-800">Topics to review</p>
+              <button
+                type="button"
+                onClick={() =>
+                  practice.mutate({
+                    noteId: exam.note.id,
+                    topicIds: weakTopics.map(([topicId]) => topicId),
+                    difficulty: exam.difficulty,
+                  })
+                }
+                disabled={practice.isPending}
+                className={`${buttonSecondary} py-1.5!`}
+              >
+                {practice.isPending ? <><Spinner /> Starting…</> : "Practice missed topics"}
+              </button>
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {weakTopics.map(([topicId, { name, missed }]) => (
+                <li key={topicId} className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
                   {name} <span className="text-zinc-400">({missed} missed)</span>
                 </li>
               ))}
             </ul>
+            {practice.error && <div className="mt-3"><ErrorBox>{practice.error.message}</ErrorBox></div>}
           </div>
         )}
       </section>

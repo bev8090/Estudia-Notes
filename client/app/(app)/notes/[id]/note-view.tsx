@@ -169,7 +169,7 @@ function DeleteNote({ id }: { id: string }) {
       >
         {remove.isPending ? "Deleting…" : "Delete"}
       </button>
-      <button type="button" onClick={() => setConfirming(false)} className={`${buttonSecondary} !px-3 !py-1.5`}>
+      <button type="button" onClick={() => setConfirming(false)} className={`${buttonSecondary} px-3! py-1.5!`}>
         Cancel
       </button>
       {remove.error && <span className="text-red-600">{remove.error.message}</span>}
