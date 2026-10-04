@@ -20,6 +20,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/brand";
 import { HeroCollage } from "@/components/landing/hero-collage";
+import { SiteFooter } from "@/components/site-footer";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -260,12 +261,7 @@ export default async function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-brand-100 bg-white/80">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-zinc-500 sm:px-6">
-          <Logo />
-          <p>Built with Next.js, Express, Supabase and Claude.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

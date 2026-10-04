@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorBox, buttonPrimary, buttonSecondary, inputClass } from "@/components/ui";
@@ -156,6 +157,18 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
           {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
       </form>
+
+      <p className="mt-5 text-center text-xs leading-relaxed text-zinc-500">
+        By continuing, you agree to our{" "}
+        <Link href="/terms" className="font-medium text-brand-700 underline underline-offset-2">
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="font-medium text-brand-700 underline underline-offset-2">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </div>
   );
 }

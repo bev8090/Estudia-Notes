@@ -124,7 +124,22 @@ In Google Cloud Console → **APIs & Services → Credentials** → your OAuth c
 1. Under **Authorized JavaScript origins**, add your Vercel URL.
 2. Leave **Authorized redirect URIs** as is (it's the Supabase callback, which doesn't change).
 
-Then **APIs & Services → OAuth consent screen**: if the publishing status is **Testing**, only the test users you listed can sign in with Google. Click **Publish app** so anyone can. For the basic scopes this app uses (email and profile), Google doesn't require a verification review.
+Then fill in the consent screen's **Branding** (in Google Auth Platform → Branding, or the older APIs & Services → OAuth consent screen). Google asks for these before it lets you publish:
+
+| Field | Value |
+|---|---|
+| App name | `Estudia Notes` |
+| User support email | your contact email |
+| App logo | **leave empty for now**: uploading a logo triggers a Google brand-verification review that can take days |
+| Application home page | `https://estudia-notes.vercel.app` |
+| Application privacy policy link | `https://estudia-notes.vercel.app/privacy` |
+| Application terms of service link | `https://estudia-notes.vercel.app/terms` |
+| Authorized domains | `estudia-notes.vercel.app` (your exact Vercel subdomain) |
+| Developer contact email | your contact email |
+
+Use your real Vercel URL everywhere. The privacy and terms pages must be live (Step 2) before you save, because Google checks the links. If Google asks you to prove you own the domain, do it in Google Search Console with the same Google account.
+
+Finally, under **Audience** (or the consent screen's publishing status): if it says **Testing**, only the test users you listed can sign in with Google. Click **Publish app** so anyone can. For the basic scopes this app uses (email and profile), and without a logo, Google doesn't require a verification review.
 
 ---
 
