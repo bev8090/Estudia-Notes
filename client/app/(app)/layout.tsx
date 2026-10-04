@@ -1,39 +1,52 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Providers } from "@/components/providers";
 import { SignOutButton } from "@/components/sign-out-button";
+import { AppNav, NewNotesButton } from "@/components/app-nav";
+import { Logo } from "@/components/brand";
 
-// Shared shell for every signed-in page (dashboard, notes, exams, attempts).
+// Shared shell for every signed-in page (dashboard, notes, exams, attempts, progress).
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   // proxy.ts already guards these routes; this is a second check in case the matcher changes.
   if (!data?.claims) redirect("/login");
 
+  const email = data.claims.email ?? "";
+  const initial = (email[0] ?? "?").toUpperCase();
+
   return (
     <Providers>
-      <div className="flex flex-1 flex-col bg-zinc-50">
-        <header className="border-b border-zinc-200 bg-white">
-          <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-3">
-            <nav className="flex items-center gap-5 text-sm">
-              <Link href="/dashboard" className="font-semibold text-zinc-900">
-                Estudia Notes
-              </Link>
-              <Link href="/dashboard" className="text-zinc-600 hover:text-zinc-900">
-                Notes
-              </Link>
-              <Link href="/progress" className="text-zinc-600 hover:text-zinc-900">
-                Progress
-              </Link>
-            </nav>
-            <div className="flex items-center gap-3 text-sm">
-              <span className="hidden text-zinc-500 sm:inline">{data.claims.email}</span>
+      <div className="bg-notebook flex flex-1 flex-col">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:shadow"
+        >
+          Skip to content
+        </a>
+        <header className="sticky top-0 z-30 border-b border-brand-100/80 bg-white/85 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+            <div className="flex items-center gap-4">
+              <Logo href="/dashboard" compact />
+              <span className="hidden h-6 w-px bg-zinc-200 md:block" aria-hidden="true" />
+              <AppNav />
+            </div>
+            <div className="flex items-center gap-2">
+              <NewNotesButton />
+              <span
+                title={email}
+                className="bg-ai-gradient hidden h-9 w-9 items-center justify-center rounded-full font-display text-sm font-bold text-white md:inline-flex"
+              >
+                <span className="sr-only">Signed in as </span>
+                {initial}
+              </span>
               <SignOutButton />
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
+        <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">
+          {children}
+        </main>
       </div>
     </Providers>
   );

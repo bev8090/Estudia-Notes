@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorBox, buttonPrimary, buttonSecondary, inputClass } from "@/components/ui";
 
 type Mode = "signin" | "signup";
 
@@ -77,16 +78,16 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <div className="grid grid-cols-2 rounded-lg bg-zinc-100 p-1 text-sm font-medium">
+    <div className="mt-8 rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xl shadow-brand-900/5 sm:p-7">
+      <div className="grid grid-cols-2 rounded-xl bg-brand-50 p-1 text-sm font-semibold">
         {(["signin", "signup"] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => switchMode(m)}
             aria-pressed={mode === m}
-            className={`rounded-md py-1.5 transition-colors ${
-              mode === m ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+            className={`cursor-pointer rounded-lg py-2 transition-colors ${
+              mode === m ? "bg-white text-brand-700 shadow-sm" : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
             {m === "signin" ? "Sign in" : "Create account"}
@@ -98,7 +99,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         type="button"
         onClick={handleGoogle}
         disabled={pending}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 disabled:opacity-60"
+        className={`${buttonSecondary} mt-6 w-full`}
       >
         <GoogleIcon />
         Continue with Google
@@ -119,7 +120,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            className={`${inputClass} mt-1`}
           />
         </label>
         <label className="block">
@@ -131,7 +132,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            className={`${inputClass} mt-1`}
           />
           {mode === "signup" && (
             <span className="mt-1 block text-xs text-zinc-500">At least 8 characters.</span>
@@ -139,12 +140,10 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         </label>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
+          <ErrorBox>{error}</ErrorBox>
         )}
         {notice && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <p role="status" className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             {notice}
           </p>
         )}
@@ -152,7 +151,7 @@ export function LoginForm({ next, initialError }: { next: string; initialError?:
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className={`${buttonPrimary} w-full`}
         >
           {pending ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>

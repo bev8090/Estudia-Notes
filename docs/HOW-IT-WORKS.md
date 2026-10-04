@@ -223,7 +223,21 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 
 ---
 
-## 7. How it's tested
+## 7. Visual design
+
+The look is built around two ideas: **studying** (notebooks, highlighters, margin notes) and **AI** (gradients and sparkles).
+
+| Element | Choice | Why |
+|---|---|---|
+| Colors | "Learning indigo" as the main color, an indigo → violet → fuchsia gradient for AI moments, highlighter yellow for what matters on the exam, green for correct answers and progress | Indigo is common in education apps and reads as calm and trustworthy; the gradient marks every place AI is doing work |
+| Fonts | Bricolage Grotesque for headings, Geist for body text, Caveat (handwriting) for small margin notes like "this will be on the exam!" | Distinctive headings, highly readable body text, and a personal, notebook feel used sparingly |
+| Motifs | A faint notebook dot grid behind pages, highlighter swipes on key phrases, the sparkle logo | They tie the visuals to the product idea: highlighting what's most likely to be tested |
+| Icons | Lucide, one consistent set | Consistent stroke and size; no emoji as icons |
+| Accessibility | Every color-coded thing (difficulty, file type, right/wrong, weak topics) also has an icon and a text label; visible keyboard focus rings; a "skip to content" link; animations turn off for users who prefer reduced motion | Color alone can't be seen by everyone |
+
+Design tokens live in `client/app/globals.css` (Tailwind 4 `@theme`), so the palette can be changed in one place. The landing page's product preview is built from HTML and CSS rather than screenshots, so it stays sharp at every screen size and matches the real app. It shows only real features, with no invented testimonials or ratings.
+
+## 8. How it's tested
 
 | Layer | What it checks | Command |
 |---|---|---|
@@ -234,7 +248,7 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 
 ---
 
-## 8. Known limitations and next steps
+## 9. Known limitations and next steps
 
 - **Background jobs run inside the server process.** If the server restarts mid-job, that job is marked failed at startup and the user retries. Running several servers would need a real job queue (for example, pg-boss or BullMQ).
 - **The daily limit counts existing rows,** so deleting notes frees up quota. A usage-log table would close that gap and also record real cost per user.
@@ -245,7 +259,7 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 
 ---
 
-## 9. Build timeline
+## 10. Build timeline
 
 | Phase | What was built |
 |---|---|
@@ -255,3 +269,4 @@ Each layer has one job: **routes** handle HTTP, **services** do the work, **doma
 | 4. Grading + review | Multiple choice graded in code, written answers graded by AI, results page with explanations and topics to review |
 | 5. Progress | Per-topic accuracy from recent answers, score-history chart, "Practice weak topics" and "Practice missed topics" exams |
 | 6. Study guides + slides | Exam-focused study guides (priorities, importance, "Be able to…" tips, common mistakes) that also steer exam questions; PowerPoint uploads |
+| 7. Visual redesign | New landing page, login, navbar and page styling: brand colors, fonts, notebook and highlighter motifs, Lucide icons, mobile fixes |

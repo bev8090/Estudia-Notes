@@ -9,6 +9,7 @@ import type { Difficulty, ProgressStats, TopicProgress } from "@/lib/types";
 import { usePracticeExam } from "@/lib/use-practice-exam";
 import { ErrorBox, Spinner, buttonPrimary } from "@/components/ui";
 import { ScoreChart } from "./score-chart";
+import { ChartNoAxesColumn, ClipboardList, ListChecks, Target, TrendingUp, Trophy, type LucideIcon } from "lucide-react";
 
 export function ProgressView() {
   const { data, error, isPending } = useQuery({
@@ -29,12 +30,16 @@ export function ProgressView() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Progress</h1>
+      <p className="font-hand text-2xl leading-none text-brand-600">look how far you&apos;ve come</p>
+      <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-zinc-900">Progress</h1>
       <p className="mt-1 text-sm text-zinc-500">How your scores are trending and which topics need more practice.</p>
 
       {totals.attempts === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-zinc-300 bg-white px-6 py-14 text-center">
-          <p className="font-medium text-zinc-900">No exams taken yet</p>
+        <div className="mt-8 flex flex-col items-center rounded-2xl border-2 border-dashed border-brand-200 bg-white/80 px-6 py-16 text-center">
+          <span className="bg-ai-gradient inline-flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shadow-brand-600/30">
+            <TrendingUp className="h-7 w-7" aria-hidden="true" />
+          </span>
+          <p className="mt-5 font-display text-xl font-bold text-zinc-900">No exams taken yet</p>
           <p className="mt-1 text-sm text-zinc-500">Take a practice exam and your scores and topic accuracy will show up here.</p>
           <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-zinc-900 underline">
             Go to your notes
@@ -43,14 +48,16 @@ export function ProgressView() {
       ) : (
         <>
           <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label="Average score" value={totals.averageScore != null ? percent(totals.averageScore) : "–"} />
-            <StatTile label="Exams taken" value={totals.attempts.toLocaleString()} />
-            <StatTile label="Questions answered" value={totals.questionsAnswered.toLocaleString()} />
-            <StatTile label="Topics to practice" value={`${totals.weakTopics} of ${totals.topicsPracticed}`} />
+            <StatTile icon={Trophy} color="bg-amber-100 text-amber-700" label="Average score" value={totals.averageScore != null ? percent(totals.averageScore) : "–"} />
+            <StatTile icon={ClipboardList} color="bg-brand-100 text-brand-700" label="Exams taken" value={totals.attempts.toLocaleString()} />
+            <StatTile icon={ListChecks} color="bg-emerald-100 text-emerald-700" label="Questions answered" value={totals.questionsAnswered.toLocaleString()} />
+            <StatTile icon={Target} color="bg-rose-100 text-rose-700" label="Topics to practice" value={`${totals.weakTopics} of ${totals.topicsPracticed}`} />
           </dl>
 
-          <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 className="font-semibold text-zinc-900">Exam scores</h2>
+          <section className="mt-6 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-zinc-900">
+              <TrendingUp className="h-5 w-5 text-brand-600" aria-hidden="true" /> Exam scores
+            </h2>
             <p className="mt-0.5 text-xs text-zinc-500">
               Your last {history.length} graded attempt{history.length === 1 ? "" : "s"}, oldest to newest
             </p>
@@ -60,7 +67,9 @@ export function ProgressView() {
           </section>
 
           <section className="mt-6">
-            <h2 className="font-semibold text-zinc-900">Accuracy by topic</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-zinc-900">
+              <ChartNoAxesColumn className="h-5 w-5 text-brand-600" aria-hidden="true" /> Accuracy by topic
+            </h2>
             <p className="mt-0.5 text-xs text-zinc-500">
               Based on your latest answers per topic. Topics under 70% are marked for practice.
             </p>
@@ -76,11 +85,14 @@ export function ProgressView() {
   );
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function StatTile({ icon: Icon, color, label, value }: { icon: LucideIcon; color: string; label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <dt className="text-xs text-zinc-500">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold text-zinc-900">{value}</dd>
+    <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
+        <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+      </span>
+      <dt className="mt-3 text-xs font-medium text-zinc-500">{label}</dt>
+      <dd className="mt-0.5 font-display text-2xl font-bold text-zinc-900">{value}</dd>
     </div>
   );
 }
@@ -91,9 +103,9 @@ function NoteTopics({ noteId, noteTitle, topics }: { noteId: string; noteTitle: 
   const weak = topics.filter((t) => t.weak);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5">
+    <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href={`/notes/${noteId}`} className="font-medium text-zinc-900 hover:underline">
+        <Link href={`/notes/${noteId}`} className="font-display font-bold text-zinc-900 hover:text-brand-700">
           {noteTitle}
         </Link>
         {weak.length > 0 && (
@@ -105,7 +117,7 @@ function NoteTopics({ noteId, noteTitle, topics }: { noteId: string; noteTitle: 
               id={`difficulty-${noteId}`}
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-              className="rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-800"
+              className="h-10 cursor-pointer rounded-xl border border-zinc-300 bg-white px-2.5 text-sm text-zinc-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
             >
               {(["STANDARD", "HARD", "CHALLENGE"] as const).map((d) => (
                 <option key={d} value={d}>
@@ -117,7 +129,7 @@ function NoteTopics({ noteId, noteTitle, topics }: { noteId: string; noteTitle: 
               type="button"
               onClick={() => practice.mutate({ noteId, topicIds: weak.map((t) => t.topicId), difficulty })}
               disabled={practice.isPending}
-              className={`${buttonPrimary} py-2!`}
+              className={`${buttonPrimary} h-10 py-0!`}
             >
               {practice.isPending ? <><Spinner /> Starting…</> : `Practice ${weak.length} weak topic${weak.length === 1 ? "" : "s"}`}
             </button>
@@ -154,10 +166,10 @@ function TopicBar({ topic }: { topic: TopicProgress }) {
         </span>
       </div>
       <div className="mt-1.5 flex items-center gap-2">
-        <div className="h-2.5 flex-1 rounded-r bg-zinc-100">
+        <div className="h-2.5 flex-1 rounded-r bg-brand-50">
           <div
             className="h-full rounded-r"
-            style={{ width: `${Math.max(topic.accuracy * 100, 1)}%`, backgroundColor: "#2a78d6" }}
+            style={{ width: `${Math.max(topic.accuracy * 100, 1)}%`, backgroundColor: "#4f46e5" }}
           />
         </div>
         <span className="w-10 text-right text-sm font-medium text-zinc-900" style={{ fontVariantNumeric: "tabular-nums" }}>

@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 export default function NewNotePage() {
   return (
     <>
-      <BackLink href="/dashboard">Your notes</BackLink>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900">Add notes</h1>
+      <BackLink href="/dashboard">My notes</BackLink>
+      <h1 className="mt-4 font-display text-3xl font-bold tracking-tight text-zinc-900">Add notes</h1>
       <p className="mt-1 text-sm text-zinc-500">
-        We&apos;ll summarize them into topics, and then you can generate practice exams.
+        We&apos;ll turn them into an exam-focused study guide, and then you can generate practice exams.
       </p>
       <NewNoteForm />
     </>

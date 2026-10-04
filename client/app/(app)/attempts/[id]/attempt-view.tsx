@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { DIFFICULTY_LABEL, LETTERS, percent, shortDate } from "@/lib/format";
+import { LETTERS, percent, shortDate } from "@/lib/format";
 import type { AttemptDetail, ReviewQuestion } from "@/lib/types";
 import { BackLink, ErrorBox, ProcessingPanel, Spinner, buttonPrimary, buttonSecondary } from "@/components/ui";
 import { usePracticeExam } from "@/lib/use-practice-exam";
+import { DifficultyBadge } from "@/components/difficulty";
+import { CircleCheck, CircleDot, CircleMinus, CircleX, Lightbulb, Sparkles, Target, type LucideIcon } from "lucide-react";
 
 type Outcome = "correct" | "partial" | "incorrect" | "unanswered";
 
@@ -19,11 +21,12 @@ function outcomeOf(q: ReviewQuestion): Outcome {
   return "incorrect";
 }
 
-const OUTCOME_STYLE: Record<Outcome, { label: string; className: string }> = {
-  correct: { label: "Correct", className: "bg-emerald-50 text-emerald-800" },
-  partial: { label: "Partial credit", className: "bg-amber-50 text-amber-800" },
-  incorrect: { label: "Incorrect", className: "bg-red-50 text-red-700" },
-  unanswered: { label: "Unanswered", className: "bg-zinc-100 text-zinc-600" },
+// Each outcome has its own icon + label, so the result never relies on color alone.
+const OUTCOME_STYLE: Record<Outcome, { label: string; className: string; icon: LucideIcon; border: string }> = {
+  correct: { label: "Correct", className: "bg-emerald-50 text-emerald-800", icon: CircleCheck, border: "border-l-emerald-500" },
+  partial: { label: "Partial credit", className: "bg-amber-50 text-amber-900", icon: CircleDot, border: "border-l-amber-400" },
+  incorrect: { label: "Incorrect", className: "bg-red-50 text-red-700", icon: CircleX, border: "border-l-red-500" },
+  unanswered: { label: "Unanswered", className: "bg-zinc-100 text-zinc-600", icon: CircleMinus, border: "border-l-zinc-300" },
 };
 
 export function AttemptView({ id }: { id: string }) {
@@ -47,10 +50,11 @@ export function AttemptView({ id }: { id: string }) {
   const header = (
     <>
       <BackLink href={`/notes/${exam.note.id}`}>{exam.note.title}</BackLink>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900">
-        Results · {DIFFICULTY_LABEL[exam.difficulty]} exam
-      </h1>
-      <p className="mt-1 text-xs text-zinc-500">Submitted {shortDate(attempt.submittedAt)}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-zinc-900">Results</h1>
+        <DifficultyBadge difficulty={exam.difficulty} />
+      </div>
+      <p className="mt-1 text-sm text-zinc-500">Submitted {shortDate(attempt.submittedAt)}</p>
     </>
   );
 
@@ -59,7 +63,7 @@ export function AttemptView({ id }: { id: string }) {
       <>
         {header}
         <div className="mt-6">
-          <ProcessingPanel title="Grading your short answers…" detail="Multiple choice is already scored. This takes a few seconds." />
+          <ProcessingPanel title="Grading your written answers…" detail="Multiple choice is already scored. AI is checking your short answers against the rubric, which takes a few seconds." />
         </div>
       </>
     );
@@ -91,15 +95,18 @@ export function AttemptView({ id }: { id: string }) {
     <>
       {header}
 
-      <section className="mt-6 flex flex-wrap items-center justify-between gap-6 rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
-        <div>
-          <p className="text-5xl font-semibold tracking-tight text-zinc-900">{percent(attempt.score ?? 0)}</p>
+      <section className="mt-6 flex flex-wrap items-center justify-between gap-6 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-7">
+        <div className="flex items-center gap-5">
+          <ScoreRing score={attempt.score ?? 0} />
+          <div>
+            <p className="font-hand text-3xl leading-none text-brand-600">{scoreMessage(attempt.score ?? 0)}</p>
           <p className="mt-2 text-sm text-zinc-600">
             {count("correct")} correct
             {count("partial") > 0 && ` · ${count("partial")} partial`}
             {` · ${count("incorrect")} incorrect`}
             {count("unanswered") > 0 && ` · ${count("unanswered")} unanswered`}
           </p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/exams/${exam.id}`} className={buttonSecondary}>
@@ -110,9 +117,11 @@ export function AttemptView({ id }: { id: string }) {
           </Link>
         </div>
         {weakTopics.length > 0 && (
-          <div className="w-full border-t border-zinc-100 pt-4 text-sm">
+          <div className="w-full rounded-xl bg-brand-50/60 p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="font-medium text-zinc-800">Topics to review</p>
+              <p className="flex items-center gap-1.5 font-display font-bold text-brand-900">
+                <Target className="h-4 w-4" aria-hidden="true" /> Topics to review
+              </p>
               <button
                 type="button"
                 onClick={() =>
@@ -130,7 +139,7 @@ export function AttemptView({ id }: { id: string }) {
             </div>
             <ul className="mt-2 flex flex-wrap gap-2">
               {weakTopics.map(([topicId, { name, missed }]) => (
-                <li key={topicId} className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">
+                <li key={topicId} className="rounded-full border border-brand-100 bg-white px-3 py-1 text-zinc-700">
                   {name} <span className="text-zinc-400">({missed} missed)</span>
                 </li>
               ))}
@@ -152,13 +161,16 @@ export function AttemptView({ id }: { id: string }) {
 function ReviewCard({ number, question: q, outcome }: { number: number; question: ReviewQuestion; outcome: Outcome }) {
   const style = OUTCOME_STYLE[outcome];
   return (
-    <li className="rounded-xl border border-zinc-200 bg-white p-5">
+    <li className={`rounded-2xl border border-l-4 border-zinc-200/80 bg-white p-5 shadow-sm sm:p-6 ${style.border}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">
+        <p className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
           Question {number}
           {q.topic && ` · ${q.topic.name}`}
         </p>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${style.className}`}>{style.label}</span>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.className}`}>
+          <style.icon className="h-3.5 w-3.5" aria-hidden="true" />
+          {style.label}
+        </span>
       </div>
       <p className="mt-1.5 font-medium leading-relaxed text-zinc-900">{q.prompt}</p>
 
@@ -170,12 +182,14 @@ function ReviewCard({ number, question: q, outcome }: { number: number; question
             return (
               <li
                 key={i}
-                className={`flex items-start justify-between gap-3 rounded-lg border px-3 py-2.5 ${
+                className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2.5 ${
                   isCorrect ? "border-emerald-300 bg-emerald-50" : isPicked ? "border-red-300 bg-red-50" : "border-zinc-200"
                 }`}
               >
-                <span className="text-zinc-800">
-                  <span className="mr-1.5 font-medium text-zinc-500">{LETTERS[i]}.</span>
+                <span className="flex items-center gap-3 text-zinc-800">
+                  <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/80 text-xs font-bold text-zinc-600 ring-1 ring-zinc-200">
+                    {LETTERS[i]}
+                  </span>
                   {choice}
                 </span>
                 <span className="shrink-0 text-xs font-medium">
@@ -190,14 +204,16 @@ function ReviewCard({ number, question: q, outcome }: { number: number; question
         <div className="mt-3 space-y-3 text-sm">
           <div>
             <p className="text-xs font-medium text-zinc-500">Your answer</p>
-            <p className="mt-1 whitespace-pre-wrap rounded-lg bg-zinc-50 px-3 py-2 text-zinc-800">
+            <p className="mt-1 whitespace-pre-wrap rounded-xl bg-zinc-50 px-3.5 py-2.5 text-zinc-800">
               {q.answer?.text || <span className="italic text-zinc-400">No answer</span>}
             </p>
           </div>
           {q.answer?.feedback && (
             <div>
-              <p className="text-xs font-medium text-zinc-500">Feedback</p>
-              <p className="mt-1 text-zinc-800">{q.answer.feedback}</p>
+              <p className="flex items-center gap-1 text-xs font-semibold text-violet-700">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> AI feedback
+              </p>
+              <p className="mt-1 rounded-xl border border-violet-100 bg-violet-50/60 px-3.5 py-2.5 text-violet-950">{q.answer.feedback}</p>
             </div>
           )}
           {q.modelAnswer && (
@@ -209,10 +225,34 @@ function ReviewCard({ number, question: q, outcome }: { number: number; question
         </div>
       )}
 
-      <div className="mt-4 border-t border-zinc-100 pt-3 text-sm">
-        <p className="text-xs font-medium text-zinc-500">Explanation</p>
+      <div className="mt-4 rounded-xl bg-zinc-50 p-3.5 text-sm">
+        <p className="flex items-center gap-1 text-xs font-semibold text-zinc-600">
+          <Lightbulb className="h-3.5 w-3.5 text-yellow-600" aria-hidden="true" /> Explanation
+        </p>
         <p className="mt-1 leading-relaxed text-zinc-700">{q.explanation}</p>
       </div>
     </li>
+  );
+}
+
+function scoreMessage(score: number) {
+  if (score >= 0.9) return "outstanding!";
+  if (score >= 0.75) return "nice work!";
+  if (score >= 0.5) return "getting there!";
+  return "keep practicing!";
+}
+
+// Circular score gauge; the color shifts with the score, and the number is always shown.
+function ScoreRing({ score }: { score: number }) {
+  const color = score >= 0.75 ? "#059669" : score >= 0.5 ? "#d97706" : "#dc2626";
+  return (
+    <div
+      className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full"
+      style={{ background: `conic-gradient(${color} ${score * 360}deg, #eef2ff 0deg)` }}
+    >
+      <div className="flex h-23 w-23 items-center justify-center rounded-full bg-white">
+        <span className="font-display text-3xl font-extrabold tracking-tight text-zinc-900">{percent(score)}</span>
+      </div>
+    </div>
   );
 }

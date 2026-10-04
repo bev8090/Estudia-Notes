@@ -4,7 +4,8 @@ import { useRef, useState, type DragEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
-import { ErrorBox, Spinner, buttonPrimary } from "@/components/ui";
+import { FileUp, Sparkles, Type, Upload } from "lucide-react";
+import { ErrorBox, Spinner, inputClass } from "@/components/ui";
 
 type Mode = "text" | "files";
 
@@ -91,19 +92,19 @@ export function NewNoteForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
+    <form onSubmit={handleSubmit} className="mt-6 space-y-5 rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-7">
       <label className="block">
-        <span className="text-sm font-medium text-zinc-700">Title (optional)</span>
+        <span className="text-sm font-semibold text-zinc-700">Title <span className="font-normal text-zinc-400">(optional)</span></span>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
           placeholder="Leave blank and we'll name it for you"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          className={`${inputClass} mt-1`}
         />
       </label>
 
-      <div role="tablist" className="inline-grid grid-cols-2 rounded-lg bg-zinc-100 p-1 text-sm font-medium">
+      <div role="tablist" className="inline-grid grid-cols-2 rounded-xl bg-brand-50 p-1 text-sm font-semibold">
         {(["text", "files"] as const).map((m) => (
           <button
             key={m}
@@ -114,9 +115,9 @@ export function NewNoteForm() {
               setMode(m);
               setError(undefined);
             }}
-            className={`rounded-md px-4 py-1.5 ${mode === m ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-4 py-2 ${mode === m ? "bg-white text-brand-700 shadow-sm" : "text-zinc-500 hover:text-zinc-800"}`}
           >
-            {m === "text" ? "Paste text" : "Upload files"}
+            {m === "text" ? <><Type className="h-4 w-4" aria-hidden="true" /> Paste text</> : <><Upload className="h-4 w-4" aria-hidden="true" /> Upload files</>}
           </button>
         ))}
       </div>
@@ -129,7 +130,7 @@ export function NewNoteForm() {
             onChange={(e) => setText(e.target.value)}
             rows={14}
             placeholder="Paste your notes here…"
-            className="block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            className={`${inputClass} leading-relaxed`}
           />
           <span className="mt-1 block text-right text-xs text-zinc-400">{text.length.toLocaleString()} characters</span>
         </label>
@@ -143,11 +144,14 @@ export function NewNoteForm() {
             onDragLeave={() => setDragging(false)}
             onDrop={onDrop}
             onClick={() => fileInput.current?.click()}
-            className={`flex cursor-pointer flex-col items-center rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors ${
-              dragging ? "border-zinc-900 bg-zinc-50" : "border-zinc-300 hover:border-zinc-400"
+            className={`flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+              dragging ? "border-brand-500 bg-brand-50" : "border-brand-200 bg-brand-50/30 hover:border-brand-400 hover:bg-brand-50/60"
             }`}
           >
-            <p className="text-sm font-medium text-zinc-800">Drop files here or click to choose</p>
+            <span className="bg-ai-gradient inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-md shadow-brand-600/25">
+              <FileUp className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <p className="mt-4 text-sm font-semibold text-zinc-800">Drop files here or click to choose</p>
             <p className="mt-1 text-xs text-zinc-500">
               One PDF, Word (.docx), PowerPoint (.pptx), .txt or .md file, or up to 10 photos (JPEG, PNG, WebP). 20 MB max.
             </p>
@@ -166,7 +170,7 @@ export function NewNoteForm() {
           {files.length > 0 && (
             <ul className="mt-3 space-y-1.5">
               {files.map((f, i) => (
-                <li key={`${f.name}-${i}`} className="flex items-center justify-between rounded-md bg-zinc-50 px-3 py-2 text-sm">
+                <li key={`${f.name}-${i}`} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
                   <span className="truncate text-zinc-800">
                     {isImage(f) && files.length > 1 ? `Page ${i + 1}: ` : ""}
                     {f.name}
@@ -175,7 +179,7 @@ export function NewNoteForm() {
                   <button
                     type="button"
                     onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))}
-                    className="ml-3 text-xs text-zinc-500 hover:text-red-600"
+                    className="ml-3 cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-red-50 hover:text-red-600"
                   >
                     Remove
                   </button>
@@ -188,8 +192,12 @@ export function NewNoteForm() {
 
       {error && <ErrorBox>{error}</ErrorBox>}
 
-      <button type="submit" disabled={pending} className={buttonPrimary}>
-        {pending ? <><Spinner /> Uploading…</> : "Summarize notes"}
+      <button
+        type="submit"
+        disabled={pending}
+        className="bg-ai-gradient inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition-transform hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {pending ? <><Spinner /> Uploading…</> : <><Sparkles className="h-4 w-4" aria-hidden="true" /> Build my study guide</>}
       </button>
     </form>
   );

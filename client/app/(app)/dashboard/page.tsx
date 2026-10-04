@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { buttonPrimary } from "@/components/ui";
 import { NotesList } from "./notes-list";
 
 export const metadata: Metadata = {
-  title: "Dashboard · Estudia Notes",
+  title: "My notes · Estudia Notes",
 };
 
 export default function DashboardPage() {
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">Your notes</h1>
-          <p className="mt-1 text-sm text-zinc-500">Pick a note to review its summary or practice with an exam.</p>
-        </div>
-        <Link href="/notes/new" className={buttonPrimary}>
-          + New notes
-        </Link>
+      <div>
+        <p className="font-hand text-2xl leading-none text-brand-600">ready to study?</p>
+        <h1 className="mt-1 font-display text-3xl font-bold tracking-tight text-zinc-900">My notes</h1>
+        <p className="mt-1 text-sm text-zinc-500">Open a note to review its study guide or take a practice exam.</p>
       </div>
       <NotesList />
     </>

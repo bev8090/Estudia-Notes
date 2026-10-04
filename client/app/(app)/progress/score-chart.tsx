@@ -6,8 +6,8 @@ import type { ProgressStats } from "@/lib/types";
 
 type Point = ProgressStats["history"][number];
 
-// Chart tokens (validated: the series blue passes contrast and band checks on white).
-const SERIES = "#2a78d6";
+// Chart tokens.
+const SERIES = "#4f46e5"; // brand indigo (validated: passes contrast and band checks on white)
 const GRID = "#e4e4e7"; // hairline gridlines
 const MUTED = "#71717a"; // axis text
 const INK = "#18181b"; // value labels
