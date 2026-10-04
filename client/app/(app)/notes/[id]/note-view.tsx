@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
 import { DIFFICULTY_LABEL, SOURCE_LABEL, percent, shortDate } from "@/lib/format";
-import type { NoteDetail, Topic } from "@/lib/types";
+import type { NoteDetail } from "@/lib/types";
 import { BackLink, ErrorBox, ProcessingPanel, Spinner, StatusBadge, buttonSecondary } from "@/components/ui";
 import { ExamGenerator } from "./exam-generator";
+import { StudyGuide } from "./study-guide";
 
 export function NoteView({ id }: { id: string }) {
   const { data: note, error, isPending } = useQuery({
@@ -64,7 +65,11 @@ export function NoteView({ id }: { id: string }) {
         )}
         {note.status === "READY" && note.summary && (
           <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-            <SummaryView overview={note.summary.overview} topics={note.summary.topics} />
+            <StudyGuide
+              overview={note.summary.overview}
+              examPriorities={note.summary.examPriorities}
+              topics={note.summary.topics}
+            />
             <aside className="space-y-6">
               <ExamGenerator noteId={id} topics={note.summary.topics} />
               <ExamHistory exams={note.exams} />
@@ -73,40 +78,6 @@ export function NoteView({ id }: { id: string }) {
         )}
       </div>
     </>
-  );
-}
-
-function SummaryView({ overview, topics }: { overview: string; topics: Topic[] }) {
-  return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5 sm:p-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Summary</h2>
-      <p className="mt-2 leading-relaxed text-zinc-800">{overview}</p>
-      <div className="mt-6 space-y-6">
-        {topics.map((topic, i) => (
-          <div key={topic.id}>
-            <h3 className="font-semibold text-zinc-900">
-              <span className="mr-2 text-zinc-400">{i + 1}.</span>
-              {topic.name}
-            </h3>
-            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-700">
-              {topic.keyPoints.map((point, j) => (
-                <li key={j}>{point}</li>
-              ))}
-            </ul>
-            {topic.keyTerms.length > 0 && (
-              <dl className="mt-3 space-y-1.5 rounded-lg bg-zinc-50 p-3 text-sm">
-                {topic.keyTerms.map((k) => (
-                  <div key={k.term}>
-                    <dt className="inline font-medium text-zinc-900">{k.term}: </dt>
-                    <dd className="inline text-zinc-700">{k.definition}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
 

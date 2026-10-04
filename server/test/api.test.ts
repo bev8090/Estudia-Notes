@@ -23,9 +23,10 @@ vi.mock("../src/services/ai/summarize.ts", () => ({
       problem: null,
       title: "Cell Biology Basics",
       overview: "Covers cells and organelles.",
+      examPriorities: ["Mitochondria produce ATP."],
       topics: [
-        { name: "Cells", keyPoints: ["Cells are the unit of life."], keyTerms: [{ term: "Cell", definition: "Basic unit of life" }] },
-        { name: "Mitochondria", keyPoints: ["Mitochondria make ATP."], keyTerms: [] },
+        { name: "Cells", importance: "MEDIUM", keyPoints: ["Cells are the unit of life."], keyTerms: [{ term: "Cell", definition: "Basic unit of life" }], examTips: ["Be able to define a cell."], pitfalls: [] },
+        { name: "Mitochondria", importance: "HIGH", keyPoints: ["Mitochondria make ATP."], keyTerms: [], examTips: ["Be able to explain what mitochondria do."], pitfalls: ["Confusing mitochondria with chloroplasts."] },
       ],
     },
   }),
@@ -113,6 +114,8 @@ describe("full flow: note -> exam -> attempt", () => {
     const note = await waitForReady(`/api/notes/${noteId}`, alice);
     expect(note.body).toMatchObject({ status: "READY", title: "Cell Biology Basics" });
     expect(note.body.summary.topics.map((t: { name: string }) => t.name)).toEqual(["Cells", "Mitochondria"]);
+    expect(note.body.summary.examPriorities).toEqual(["Mitochondria produce ATP."]);
+    expect(note.body.summary.topics[1]).toMatchObject({ importance: "HIGH", pitfalls: ["Confusing mitochondria with chloroplasts."] });
 
     // Bob can't see, use, or delete Alice's note.
     await request(app).get(`/api/notes/${noteId}`).set(as(bob)).expect(404);

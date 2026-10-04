@@ -32,6 +32,13 @@ enum Difficulty {
   CHALLENGE
 }
 
+// How central a topic is to the exam, judged from the notes
+enum TopicImportance {
+  HIGH
+  MEDIUM
+  LOW
+}
+
 enum QuestionType {
   MCQ
   SHORT
@@ -57,11 +64,13 @@ model Note {
 }
 
 model Summary {
-  id        String   @id @default(uuid()) @db.Uuid
-  noteId    String   @unique @db.Uuid
-  overview  String
-  model     String
-  createdAt DateTime @default(now())
+  id             String   @id @default(uuid()) @db.Uuid
+  noteId         String   @unique @db.Uuid
+  overview       String
+  // The most important ideas to study across the whole note, most important first
+  examPriorities String[] @default([])
+  model          String
+  createdAt      DateTime @default(now())
 
   note   Note    @relation(fields: [noteId], references: [id], onDelete: Cascade)
   topics Topic[]
@@ -70,13 +79,18 @@ model Summary {
 }
 
 model Topic {
-  id        String   @id @default(uuid()) @db.Uuid
-  summaryId String   @db.Uuid
-  name      String
-  order     Int
-  keyPoints String[]
+  id         String          @id @default(uuid()) @db.Uuid
+  summaryId  String          @db.Uuid
+  name       String
+  order      Int
+  keyPoints  String[]
   // [{ term, definition }]
-  keyTerms  Json     @default("[]")
+  keyTerms   Json            @default("[]")
+  importance TopicImportance @default(MEDIUM)
+  // Concrete things to be able to do on the exam, e.g. "Be able to explain why..."
+  examTips   String[]        @default([])
+  // Likely confusions to avoid; also used as distractors when writing exams
+  pitfalls   String[]        @default([])
 
   summary   Summary    @relation(fields: [summaryId], references: [id], onDelete: Cascade)
   questions Question[]

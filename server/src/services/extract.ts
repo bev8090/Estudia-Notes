@@ -77,7 +77,7 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
         rawText: null,
         content: [
           { type: "document", source: { type: "base64", media_type: "application/pdf", data: file.buffer.toString("base64") } },
-          { type: "text", text: "Here are the student's notes as a PDF. Summarize them." },
+          { type: "text", text: "Here are the student's notes as a PDF. Turn them into a study guide for their exam." },
         ],
       };
     case "docx": {
@@ -107,7 +107,7 @@ function fromText(sourceType: SourceType, text: string): NoteInput {
         type: "text",
         // Tags mark where the student's notes start and end, so text inside them is
         // treated as material to summarize, never as instructions to follow.
-        text: `<notes>\n${trimmed}\n</notes>\n\nSummarize the notes above.`,
+        text: `<notes>\n${trimmed}\n</notes>\n\nTurn the notes above into a study guide for the student's exam.`,
       },
     ],
   };
@@ -124,7 +124,7 @@ function fromImages(files: UploadedFile[], mediaTypes: Anthropic.Base64ImageSour
   ]);
   content.push({
     type: "text",
-    text: "These are photos of the student's notes, in page order. Read them (including handwriting) and summarize them.",
+    text: "These are photos of the student's notes, in page order. Read them (including handwriting) and turn them into a study guide for their exam.",
   });
   return { sourceType: "IMAGE", rawText: null, content };
 }

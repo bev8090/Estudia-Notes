@@ -15,11 +15,16 @@ export type NoteListItem = {
   examCount: number;
 };
 
+export type TopicImportance = "HIGH" | "MEDIUM" | "LOW";
+
 export type Topic = {
   id: string;
   name: string;
+  importance: TopicImportance;
   keyPoints: string[];
   keyTerms: { term: string; definition: string }[];
+  examTips: string[]; // "Be able to ..."
+  pitfalls: string[]; // common mistakes to avoid
 };
 
 export type ExamListItem = {
@@ -34,7 +39,7 @@ export type ExamListItem = {
 };
 
 export type NoteDetail = Omit<NoteListItem, "examCount"> & {
-  summary: { overview: string; topics: Topic[] } | null;
+  summary: { overview: string; examPriorities: string[]; topics: Topic[] } | null;
   exams: ExamListItem[];
 };
 

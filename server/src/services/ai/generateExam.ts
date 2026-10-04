@@ -34,28 +34,45 @@ Rules:
 - Test only material in the summary. Never require outside knowledge.
 - Follow the requested difficulty closely:
   ${Object.values(DIFFICULTY_GUIDE).join("\n  ")}
-- Spread questions across the topics (or across the focus topics, if given). Do not repeat a question or test the same fact twice.
+- Spread questions across the topics (or across the focus topics, if given), giving HIGH-importance topics and the exam priorities more questions than LOW ones. Do not repeat a question or test the same fact twice.
+- Use each topic's "Be able to" tips as the skills to test, and its common mistakes as wrong choices, since those are the confusions a well-designed exam checks for.
 - Multiple choice (MCQ): exactly 4 choices, exactly one correct. Wrong choices should be similar in length and style to the correct one. Never use "All of the above", "None of the above", or choices that refer to other choices, because the choices are shuffled after you write them.
 - Explanations must refer to choices by their content, never by letter or position ("A", "the second option"), because the order changes. Say why the correct answer is right and, for MCQ, why the most tempting wrong choice is wrong.
 - Short answer (SHORT): answerable in 1-3 sentences. The rubric lists the specific points required for full credit and what counts as partial credit.
 - Questions should be clear and unambiguous, and must not give away their own answers.`;
 
+export type ExamTopic = {
+  name: string;
+  importance: "HIGH" | "MEDIUM" | "LOW";
+  keyPoints: string[];
+  keyTerms: { term: string; definition: string }[];
+  examTips: string[];
+  pitfalls: string[];
+};
+
+const bullets = (label: string, items: string[]) =>
+  items.length ? `\n${label}:\n${items.map((item) => `  - ${item}`).join("\n")}` : "";
+
 export function generateExamQuestions(opts: {
   overview: string;
-  topics: { name: string; keyPoints: string[]; keyTerms: { term: string; definition: string }[] }[];
+  examPriorities: string[];
+  topics: ExamTopic[];
   difficulty: Difficulty;
   questionCount: number;
   focusTopicNumbers: number[];
 }) {
   const short = shortAnswerCount(opts.questionCount);
   const summary = opts.topics
-    .map((t, i) => {
-      const terms = t.keyTerms.map((k) => `  - ${k.term}: ${k.definition}`).join("\n");
-      return `Topic ${i + 1}: ${t.name}\nKey points:\n${t.keyPoints.map((p) => `  - ${p}`).join("\n")}${
-        terms ? `\nKey terms:\n${terms}` : ""
-      }`;
-    })
+    .map(
+      (t, i) =>
+        `Topic ${i + 1}: ${t.name} (importance: ${t.importance})` +
+        bullets("Key points", t.keyPoints) +
+        bullets("Key terms", t.keyTerms.map((k) => `${k.term}: ${k.definition}`)) +
+        bullets("Be able to", t.examTips) +
+        bullets("Common mistakes", t.pitfalls),
+    )
     .join("\n\n");
+  const priorities = bullets("Exam priorities (most important first)", opts.examPriorities);
   const focus = opts.focusTopicNumbers.length
     ? `\nFocus only on these topics: ${opts.focusTopicNumbers.join(", ")}. The student has been getting them wrong.`
     : "";
@@ -67,7 +84,7 @@ export function generateExamQuestions(opts: {
       {
         type: "text",
         text:
-          `<summary>\nOverview: ${opts.overview}\n\n${summary}\n</summary>\n\n` +
+          `<summary>\nOverview: ${opts.overview}${priorities}\n\n${summary}\n</summary>\n\n` +
           `Write exactly ${opts.questionCount} questions: ${opts.questionCount - short} MCQ and ${short} SHORT, mixed together.\n` +
           `Difficulty: ${opts.difficulty}.${focus}`,
       },

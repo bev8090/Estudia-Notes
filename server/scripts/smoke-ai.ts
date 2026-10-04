@@ -38,6 +38,7 @@ console.log(JSON.stringify(summary, null, 2));
 
 const { data: exam } = await generateExamQuestions({
   overview: summary.overview,
+  examPriorities: summary.examPriorities,
   topics: summary.topics,
   difficulty: "STANDARD",
   questionCount: 5,

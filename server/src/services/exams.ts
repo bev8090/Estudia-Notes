@@ -19,7 +19,11 @@ export async function processExam(examId: string) {
           summary: {
             select: {
               overview: true,
-              topics: { orderBy: { order: "asc" }, select: { id: true, name: true, keyPoints: true, keyTerms: true } },
+              examPriorities: true,
+              topics: {
+                orderBy: { order: "asc" },
+                select: { id: true, name: true, importance: true, keyPoints: true, keyTerms: true, examTips: true, pitfalls: true },
+              },
             },
           },
         },
@@ -37,10 +41,14 @@ export async function processExam(examId: string) {
   for (let attempt = 1; !rows; attempt++) {
     const { data } = await generateExamQuestions({
       overview: summary.overview,
+      examPriorities: summary.examPriorities,
       topics: summary.topics.map((t) => ({
         name: t.name,
+        importance: t.importance,
         keyPoints: t.keyPoints,
         keyTerms: t.keyTerms as { term: string; definition: string }[],
+        examTips: t.examTips,
+        pitfalls: t.pitfalls,
       })),
       difficulty: exam.difficulty,
       questionCount: exam.questionCount,

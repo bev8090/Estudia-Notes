@@ -79,9 +79,10 @@ notesRouter.get("/:id", async (req, res) => {
       summary: {
         select: {
           overview: true,
+          examPriorities: true,
           topics: {
             orderBy: { order: "asc" },
-            select: { id: true, name: true, keyPoints: true, keyTerms: true },
+            select: { id: true, name: true, importance: true, keyPoints: true, keyTerms: true, examTips: true, pitfalls: true },
           },
         },
       },

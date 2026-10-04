@@ -21,6 +21,7 @@ export async function processNote(noteId: string, input: NoteInput, useAiTitle: 
       summary: {
         create: {
           overview: data.overview,
+          examPriorities: data.examPriorities,
           model,
           topics: {
             create: data.topics.map((t, order) => ({
@@ -28,6 +29,9 @@ export async function processNote(noteId: string, input: NoteInput, useAiTitle: 
               order,
               keyPoints: t.keyPoints,
               keyTerms: t.keyTerms,
+              importance: t.importance,
+              examTips: t.examTips,
+              pitfalls: t.pitfalls,
             })),
           },
         },
