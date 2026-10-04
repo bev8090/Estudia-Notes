@@ -4,7 +4,12 @@ import { z } from "zod";
 // Fail fast on startup if configuration is missing, instead of on the first request.
 const envSchema = z.object({
   PORT: z.coerce.number().default(5000),
-  CLIENT_URL: z.url(),
+  // Browser origins allowed to call the API. Comma-separated, e.g.
+  // "https://estudia-notes.vercel.app,http://localhost:3000"
+  CLIENT_URL: z
+    .string()
+    .transform((value) => value.split(",").map((origin) => origin.trim().replace(/\/$/, "")).filter(Boolean))
+    .pipe(z.array(z.url()).min(1)),
   DATABASE_URL: z.string().min(1),
   SUPABASE_URL: z.url(),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1),

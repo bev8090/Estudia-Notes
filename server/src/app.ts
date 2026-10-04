@@ -13,6 +13,9 @@ import { statsRouter } from "./routes/stats.ts";
 export function createApp() {
   const app = express();
 
+  // Hosts like Render sit behind one proxy; trust it so req.ip and the rate limiter
+  // see the real client address instead of the proxy's.
+  app.set("trust proxy", 1);
   app.use(cors({ origin: env.CLIENT_URL, credentials: true }));
   app.use(express.json({ limit: "100kb" }));
 
