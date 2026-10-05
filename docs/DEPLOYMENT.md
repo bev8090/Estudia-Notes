@@ -59,6 +59,7 @@ git push
    | `SUPABASE_PUBLISHABLE_KEY` | your publishable key |
    | `ANTHROPIC_API_KEY` | your Claude API key |
    | `CLIENT_URL` | `http://localhost:3000` for now; you'll update it in Step 3 |
+   | `DEMO_SALT` | any long random string (keeps the free demo's stored IP hashes from being reversed) |
 
    Don't set `PORT`; Render sets it automatically.
 

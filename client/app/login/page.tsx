@@ -16,7 +16,8 @@ const PERKS = [
 ];
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { next, error } = await searchParams;
+  const { next, error, mode, from } = await searchParams;
+  const fromDemo = from === "demo";
 
   return (
     <main className="grid flex-1 lg:grid-cols-2">
@@ -63,11 +64,18 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <div className="lg:hidden">
             <Logo />
           </div>
-          <h1 className="mt-8 font-display text-3xl font-bold tracking-tight text-zinc-900 lg:mt-0">Welcome</h1>
-          <p className="mt-1 text-sm text-zinc-500">Sign in or create an account to start studying.</p>
+          <h1 className="mt-8 font-display text-3xl font-bold tracking-tight text-zinc-900 lg:mt-0">
+            {fromDemo ? "Keep your study guide" : "Welcome"}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {fromDemo
+              ? "Create a free account and we'll save your study guide, so you can take practice exams on it."
+              : "Sign in or create an account to start studying."}
+          </p>
           <LoginForm
             next={safeNextPath(typeof next === "string" ? next : undefined)}
             initialError={typeof error === "string" ? error : undefined}
+            initialMode={mode === "signup" ? "signup" : "signin"}
           />
         </div>
       </section>

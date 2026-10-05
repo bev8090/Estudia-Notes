@@ -106,6 +106,16 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Trying it without an account">
+        <p>
+          You can make one free study guide without signing up. To make that possible, we keep the study guide (and any
+          text taken from your notes) for up to 7 days, so it can be saved to your account if you sign up, and then
+          delete it. To limit free use, we also store a one-way, salted hash of your IP address, which can&apos;t be
+          turned back into the address. Your free study guide is also remembered in your own browser so you can return
+          to it.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Cookies and local storage">
         <p>
           We use cookies only to keep you signed in. While you take an exam, your draft answers are saved in your own

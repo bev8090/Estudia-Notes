@@ -18,6 +18,11 @@ const envSchema = z.object({
   AI_MODEL: z.string().default("claude-sonnet-5-5"),
   // Max notes + exams one user can generate per 24 hours. Protects the API budget.
   DAILY_AI_LIMIT: z.coerce.number().int().positive().default(30),
+  // Free demo (no account): study guides per IP address per 24 hours, and across all visitors.
+  DEMO_PER_IP_PER_DAY: z.coerce.number().int().nonnegative().default(1),
+  DEMO_DAILY_LIMIT: z.coerce.number().int().nonnegative().default(100),
+  // Mixed into the IP hash so stored hashes can't be matched against a list of IPs.
+  DEMO_SALT: z.string().min(8).default("estudia-notes-demo-salt"),
 });
 
 const parsed = envSchema.safeParse(process.env);

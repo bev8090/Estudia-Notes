@@ -181,3 +181,23 @@ model Answer {
   @@index([questionId])
   @@map("answers")
 }
+
+// A study guide made by a visitor without an account (the free demo). Kept for up to
+// 7 days so it can be saved to an account after sign-up, then deleted.
+model DemoGuide {
+  id          String     @id @default(uuid()) @db.Uuid
+  // One-way hash of the visitor's IP address, only used to limit free demo use.
+  ipHash      String
+  sourceType  SourceType
+  rawText     String?
+  title       String?
+  // The generated study guide (same shape as the AI's summary); null while generating.
+  guide       Json?
+  createdAt   DateTime   @default(now())
+  claimedBy   String?    @db.Uuid
+  claimedNote String?    @db.Uuid
+
+  @@index([ipHash, createdAt])
+  @@index([createdAt])
+  @@map("demo_guides")
+}

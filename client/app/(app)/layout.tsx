@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Providers } from "@/components/providers";
+import { DemoClaimer } from "@/components/demo-claimer";
 import { SignOutButton } from "@/components/sign-out-button";
 import { AppNav, NewNotesButton } from "@/components/app-nav";
 import { Logo } from "@/components/brand";
@@ -17,6 +18,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <Providers>
+      <DemoClaimer />
       <div className="bg-notebook flex flex-1 flex-col">
         <a
           href="#main"

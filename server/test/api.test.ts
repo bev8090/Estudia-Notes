@@ -16,11 +16,11 @@ vi.mock("../src/middleware/auth.ts", () => ({
 }));
 
 vi.mock("../src/services/ai/summarize.ts", () => ({
-  summarizeNotes: async () => ({
+  summarizeNotes: async (content: unknown) => ({
     model: "test-model",
     data: {
-      usable: true,
-      problem: null,
+      usable: !JSON.stringify(content).includes("UNREADABLE"),
+      problem: JSON.stringify(content).includes("UNREADABLE") ? "These notes couldn't be read." : null,
       title: "Cell Biology Basics",
       overview: "Covers cells and organelles.",
       examPriorities: ["Mitochondria produce ATP."],
@@ -86,7 +86,10 @@ async function waitForReady(path: string, user: string) {
   throw new Error(`${path} never finished processing`);
 }
 
+const demoIds: string[] = [];
+
 afterAll(async () => {
+  await prisma.demoGuide.deleteMany({ where: { id: { in: demoIds } } });
   await prisma.note.deleteMany({ where: { userId: { in: [alice, bob] } } });
   await prisma.$disconnect();
 });
@@ -177,4 +180,61 @@ describe("full flow: note -> exam -> attempt", () => {
     await request(app).delete(`/api/notes/${noteId}`).set(as(alice)).expect(204);
     await request(app).get(`/api/exams/${examId}`).set(as(alice)).expect(404);
   }, 60_000);
+});
+
+describe("free demo (no account)", () => {
+  // Each test uses its own IP (via X-Forwarded-For, which the app trusts from one proxy).
+  const fromIp = (ip: string) => ({ "X-Forwarded-For": ip });
+  // Unique per test and per run (198.18.0.0/15 is reserved for testing).
+  const runOctet = Math.floor(Math.random() * 256);
+  let next = 1;
+  const ip = () => `198.18.${runOctet}.${next++}`;
+
+  it("makes one study guide without an account, then asks the visitor to sign up", async () => {
+    const visitor = ip();
+    const first = await request(app).post("/api/demo/study-guide").set(fromIp(visitor)).field("text", notes).expect(200);
+    demoIds.push(first.body.id);
+    expect(first.body).toMatchObject({ title: "Cell Biology Basics", sourceType: "TEXT" });
+    expect(first.body.guide.examPriorities).toEqual(["Mitochondria produce ATP."]);
+    expect(first.body.guide.topics.map((t: { id: string }) => t.id)).toEqual(["demo-topic-1", "demo-topic-2"]);
+
+    // The second try from the same visitor is refused before the upload is even read.
+    const second = await request(app).post("/api/demo/study-guide").set(fromIp(visitor)).field("text", notes).expect(429);
+    expect(second.body.code).toBe("DEMO_USED");
+  });
+
+  it("doesn't use up the free try when the notes can't be read or are too big", async () => {
+    const visitor = ip();
+    await request(app).post("/api/demo/study-guide").set(fromIp(visitor)).field("text", "UNREADABLE " + notes).expect(422);
+    const tooLong = await request(app).post("/api/demo/study-guide").set(fromIp(visitor)).field("text", "x".repeat(20_001)).expect(400);
+    expect(tooLong.body.error).toMatch(/20,000 characters/);
+    const ok = await request(app).post("/api/demo/study-guide").set(fromIp(visitor)).field("text", notes).expect(200);
+    demoIds.push(ok.body.id);
+  });
+
+  it("saves the demo guide to the account after sign-up, exactly once", async () => {
+    const created = await request(app).post("/api/demo/study-guide").set(fromIp(ip())).field("text", notes).expect(200);
+    demoIds.push(created.body.id);
+    const claimPath = `/api/demo/${created.body.id}/claim`;
+
+    await request(app).post(claimPath).expect(401); // must be signed in
+    const claimed = await request(app).post(claimPath).set(as(alice)).expect(201);
+    const noteId = claimed.body.noteId;
+
+    const note = await request(app).get(`/api/notes/${noteId}`).set(as(alice)).expect(200);
+    expect(note.body).toMatchObject({ status: "READY", title: "Cell Biology Basics", sourceType: "TEXT" });
+    expect(note.body.summary.examPriorities).toEqual(["Mitochondria produce ATP."]);
+    expect(note.body.summary.topics[1]).toMatchObject({ name: "Mitochondria", importance: "HIGH" });
+
+    // Claiming again (e.g. a reload) returns the same note; nobody else can claim it.
+    expect((await request(app).post(claimPath).set(as(alice)).expect(200)).body.noteId).toBe(noteId);
+    await request(app).post(claimPath).set(as(bob)).expect(404);
+
+    // Now that it's in an account, practice exams work.
+    await request(app).post(`/api/notes/${noteId}/exams`).set(as(alice)).send({ difficulty: "STANDARD", questionCount: 5 }).expect(202);
+  }, 60_000);
+
+  it("keeps practice exams behind sign-in", async () => {
+    await request(app).post("/api/notes/00000000-0000-4000-8000-000000000000/exams").send({ difficulty: "STANDARD", questionCount: 5 }).expect(401);
+  });
 });

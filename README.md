@@ -33,6 +33,7 @@
 - **Practice exams** at Standard, Hard or Challenge difficulty, with 5, 10 or 25 questions (about 70% multiple choice, 30% short answer).
 - **Instant grading and feedback**: multiple choice is graded in code; written answers are graded by AI against a rubric with partial credit.
 - **Progress tracking**: score history, accuracy per topic, and one-click exams on your weak topics.
+- **Try it without an account**: see a sample study guide instantly, or make one free study guide from your own notes. Practice exams unlock with a free account, and the demo guide is saved to the new account automatically.
 - **Private by design**: uploaded files are read once and never stored, and each user can only ever see their own data.
 
 | Study guide | Results | Progress |
@@ -81,7 +82,7 @@ Read the full write-up, including the reasoning behind each decision, in [docs/H
 
 ```bash
 cd server
-npx vitest run        # 29 unit and API tests (Vitest + Supertest)
+npx vitest run        # 33 unit and API tests (Vitest + Supertest)
 npm run smoke:ai      # runs the real AI steps on sample notes (costs a few cents)
 ```
 

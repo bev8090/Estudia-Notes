@@ -139,6 +139,19 @@ sequenceDiagram
 
 **Chart design choices:** the chart is plain SVG, with no charting library. It's a single series, so it uses one color and no legend (the heading names it). The color was checked with a contrast and color-blindness validator. Weak topics are marked with an icon and text, never color alone, and every number is also reachable without hovering.
 
+### 3e. The free demo (no account)
+
+*Code: `server/src/routes/demo.ts`, `client/app/demo/`, `client/components/demo-claimer.tsx`*
+
+Visitors can try the app at `/demo` before signing up:
+
+- **"Sample notes"** shows a study guide that was generated once by the real AI and saved with the website (`client/lib/demo/sample.ts`), so it appears instantly and costs nothing.
+- **"Your notes"** makes **one** real study guide from the visitor's own notes, with smaller upload limits (20,000 characters, 5 MB, 3 photos). Practice exams are shown but locked behind a free account.
+
+**Limiting free use.** Without an account there's no perfect way to identify a person, so there are three layers. The page remembers the visitor's free guide in their browser. The server allows **one per IP address per 24 hours**, storing only a salted one-way hash of the address. And a cap of 100 demo guides per day across all visitors bounds the cost (about $4 a day at most). The server reserves the visitor's free try *before* the slow AI call, so two requests at once can't both get one, and releases it if the AI step fails, so a failed attempt doesn't use it up. Students sharing a campus network share an IP; `DEMO_PER_IP_PER_DAY` can be raised if that becomes a problem.
+
+**Keeping the guide after sign-up.** The demo guide is stored for up to 7 days. After the visitor signs up (or signs in), `DemoClaimer` on the signed-in pages asks the server to copy it into their account as a normal note, then opens it so they can generate exams right away. The copy happens in a database transaction that only one claim can win, and claiming twice returns the same note.
+
 ---
 
 ## 4. How the app uses Claude
@@ -271,3 +284,4 @@ Design tokens live in `client/app/globals.css` (Tailwind 4 `@theme`), so the pal
 | 5. Progress | Per-topic accuracy from recent answers, score-history chart, "Practice weak topics" and "Practice missed topics" exams |
 | 6. Study guides + slides | Exam-focused study guides (priorities, importance, "Be able to…" tips, common mistakes) that also steer exam questions; PowerPoint uploads |
 | 7. Visual redesign | New landing page, login, navbar and page styling: brand colors, fonts, notebook and highlighter motifs, Lucide icons, mobile fixes |
+| 8. Launch polish | Privacy and terms pages, deployment to Vercel and Render, README, CI, app icons, and the free no-account demo |

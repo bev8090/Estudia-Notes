@@ -4,9 +4,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  code?: string; // machine-readable reason from the server, e.g. "DEMO_USED"
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -26,7 +28,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(res.status, body.error ?? res.statusText);
+    throw new ApiError(res.status, body.error ?? res.statusText, body.code);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

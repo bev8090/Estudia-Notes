@@ -8,9 +8,17 @@ import { ErrorBox, buttonPrimary, buttonSecondary, inputClass } from "@/componen
 
 type Mode = "signin" | "signup";
 
-export function LoginForm({ next, initialError }: { next: string; initialError?: string }) {
+export function LoginForm({
+  next,
+  initialError,
+  initialMode = "signin",
+}: {
+  next: string;
+  initialError?: string;
+  initialMode?: Mode;
+}) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);

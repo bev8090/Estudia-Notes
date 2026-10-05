@@ -1,10 +1,13 @@
 // An error whose message is safe to show the user, with the HTTP status to send.
 // Anything else that reaches the error handler becomes a generic 500.
+// `code` is an optional machine-readable reason the client can branch on (e.g. "DEMO_USED").
 export class HttpError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 

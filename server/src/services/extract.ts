@@ -21,6 +21,13 @@ export const MAX_IMAGES = 10;
 export const MAX_IMAGE_BYTES = 7 * 1024 * 1024; // Claude's limit is 10 MB after base64 (+33%)
 export const MAX_TOTAL_BYTES = 20 * 1024 * 1024; // stays under Claude's 32 MB request limit
 
+// Upload limits. Signed-in users get the full limits; the free demo uses smaller ones
+// so a visitor without an account can't run up a large AI bill.
+export type UploadLimits = { maxTextChars: number; maxTotalBytes: number; maxImages: number };
+export const FULL_LIMITS: UploadLimits = { maxTextChars: MAX_TEXT_CHARS, maxTotalBytes: MAX_TOTAL_BYTES, maxImages: MAX_IMAGES };
+export const DEMO_LIMITS: UploadLimits = { maxTextChars: 20_000, maxTotalBytes: 5 * 1024 * 1024, maxImages: 3 };
+const mb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)} MB`;
+
 type Kind =
   | "pdf"
   | "docx"
@@ -55,16 +62,20 @@ export function sniff(file: UploadedFile): Kind | null {
   return null;
 }
 
-export async function prepareNoteInput(files: UploadedFile[], pastedText: string | undefined): Promise<NoteInput> {
+export async function prepareNoteInput(
+  files: UploadedFile[],
+  pastedText: string | undefined,
+  limits: UploadLimits = FULL_LIMITS,
+): Promise<NoteInput> {
   if (files.length === 0) {
-    return fromText("TEXT", pastedText ?? "");
+    return fromText("TEXT", pastedText ?? "", limits);
   }
   if (pastedText?.trim()) {
     throw new HttpError(400, "Send either pasted text or files, not both.");
   }
 
   const total = files.reduce((sum, f) => sum + f.buffer.length, 0);
-  if (total > MAX_TOTAL_BYTES) throw new HttpError(400, "Uploads are limited to 20 MB in total.");
+  if (total > limits.maxTotalBytes) throw new HttpError(400, `Uploads are limited to ${mb(limits.maxTotalBytes)} in total.`);
 
   const kinds = files.map((f) => {
     const kind = sniff(f);
@@ -85,10 +96,10 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
 
   // Several photos (pages of handwritten notes) are fine; documents come one at a time.
   if (kinds.every((k) => k.startsWith("image/"))) {
-    return fromImages(files, kinds as Anthropic.Base64ImageSource["media_type"][]);
+    return fromImages(files, kinds as Anthropic.Base64ImageSource["media_type"][], limits);
   }
   if (files.length > 1) {
-    throw new HttpError(400, "Upload one document at a time, or up to 10 photos.");
+    throw new HttpError(400, `Upload one document at a time, or up to ${limits.maxImages} photos.`);
   }
 
   const [file] = files;
@@ -106,7 +117,7 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
       const { value } = await mammoth.extractRawText({ buffer: file.buffer }).catch(() => {
         throw new HttpError(400, "That Word document couldn't be opened. Is it a valid .docx file?");
       });
-      return fromText("DOCX", value);
+      return fromText("DOCX", value, limits);
     }
     case "pptx": {
       const slides = extractSlides(file.buffer);
@@ -118,20 +129,20 @@ export async function prepareNoteInput(files: UploadedFile[], pastedText: string
           "We couldn't find enough text in these slides. If they're mostly pictures or diagrams, export them as a PDF (File > Export > PDF) and upload that instead.",
         );
       }
-      return fromText("PPTX", formatSlides(slides));
+      return fromText("PPTX", formatSlides(slides), limits);
     }
     default:
-      return fromText("TEXT", file.buffer.toString("utf8"));
+      return fromText("TEXT", file.buffer.toString("utf8"), limits);
   }
 }
 
-function fromText(sourceType: SourceType, text: string): NoteInput {
+function fromText(sourceType: SourceType, text: string, limits: UploadLimits): NoteInput {
   const trimmed = text.trim();
   if (trimmed.length < MIN_TEXT_CHARS) {
     throw new HttpError(400, `Notes need at least ${MIN_TEXT_CHARS} characters of text.`);
   }
-  if (trimmed.length > MAX_TEXT_CHARS) {
-    throw new HttpError(400, `Notes are limited to ${MAX_TEXT_CHARS.toLocaleString()} characters.`);
+  if (trimmed.length > limits.maxTextChars) {
+    throw new HttpError(400, `Notes are limited to ${limits.maxTextChars.toLocaleString()} characters.`);
   }
   return {
     sourceType,
@@ -150,8 +161,8 @@ function fromText(sourceType: SourceType, text: string): NoteInput {
   };
 }
 
-function fromImages(files: UploadedFile[], mediaTypes: Anthropic.Base64ImageSource["media_type"][]): NoteInput {
-  if (files.length > MAX_IMAGES) throw new HttpError(400, `Upload at most ${MAX_IMAGES} photos at a time.`);
+function fromImages(files: UploadedFile[], mediaTypes: Anthropic.Base64ImageSource["media_type"][], limits: UploadLimits): NoteInput {
+  if (files.length > limits.maxImages) throw new HttpError(400, `Upload at most ${limits.maxImages} photos at a time.`);
   const tooBig = files.find((f) => f.buffer.length > MAX_IMAGE_BYTES);
   if (tooBig) throw new HttpError(400, `${tooBig.originalname} is larger than 7 MB. Please use a smaller photo.`);
 

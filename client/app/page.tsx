@@ -26,7 +26,8 @@ export default async function Home() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims);
-  const cta = signedIn ? { href: "/dashboard", label: "Go to your notes" } : { href: "/login", label: "Get started" };
+  const cta = signedIn ? { href: "/dashboard", label: "Go to your notes" } : { href: "/demo", label: "Try it free" };
+  const secondary = signedIn ? null : { href: "/login?mode=signup", label: "Create free account" };
 
   return (
     <div className="bg-notebook flex flex-1 flex-col">
@@ -78,13 +79,16 @@ export default async function Home() {
               >
                 {cta.label} <ArrowRight className="h-4 w-4" />
               </Link>
-              <a
-                href="#how-it-works"
+              <Link
+                href={secondary?.href ?? "#how-it-works"}
                 className="inline-flex items-center rounded-xl border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-800 transition-colors hover:border-zinc-400"
               >
-                See how it works
-              </a>
+                {secondary?.label ?? "See how it works"}
+              </Link>
             </div>
+            {!signedIn && (
+              <p className="mt-3 text-sm text-zinc-500">See a sample study guide or make one from your notes. No sign-up needed.</p>
+            )}
             <FormatStrip />
           </div>
           <HeroCollage />
@@ -257,6 +261,14 @@ export default async function Home() {
             >
               {cta.label} <ArrowRight className="h-4 w-4" />
             </Link>
+            {secondary && (
+              <p className="relative mt-4 text-sm text-brand-100">
+                or{" "}
+                <Link href={secondary.href} className="font-semibold text-white underline underline-offset-4">
+                  create a free account
+                </Link>
+              </p>
+            )}
           </div>
         </section>
       </main>

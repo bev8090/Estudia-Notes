@@ -10,7 +10,7 @@ import type { NoteDetail } from "@/lib/types";
 import { ClipboardList, Trash2 } from "lucide-react";
 import { BackLink, ErrorBox, ProcessingPanel, SourceIcon, Spinner, StatusBadge, buttonSecondary } from "@/components/ui";
 import { ExamGenerator } from "./exam-generator";
-import { StudyGuide } from "./study-guide";
+import { StudyGuide } from "@/components/study-guide";
 
 export function NoteView({ id }: { id: string }) {
   const { data: note, error, isPending } = useQuery({
