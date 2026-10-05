@@ -11,7 +11,7 @@
 
 <p align="center">
   <!-- TODO: replace YOUR-APP with your Vercel URL -->
-  <a href="https://YOUR-APP.vercel.app"><b>Live demo</b></a> ·
+  <a href="https://estudia-notes.vercel.app"><b>Live demo</b></a> ·
   <a href="docs/HOW-IT-WORKS.md">How it works</a> ·
   <a href="docs/DEPLOYMENT.md">Deployment guide</a>
 </p>
