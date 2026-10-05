@@ -245,6 +245,7 @@ Design tokens live in `client/app/globals.css` (Tailwind 4 `@theme`), so the pal
 | **API tests** (`test/api.test.ts`) | The full note → exam → attempt flow over real HTTP against the real database; users can't see each other's data; the answer key doesn't leak. Login and Claude are replaced with stand-ins, so this is free and repeatable | `npm test` in `server/` |
 | **AI smoke test** (`scripts/smoke-ai.ts`) | All three real AI steps on sample notes; prints the output so you can judge its quality (a few cents per run) | `npm run smoke:ai` in `server/` |
 | **Type checks and builds** | Code compiles; the frontend builds for production | `npm run typecheck` (server), `npx next build` (client) |
+| **Continuous integration** (`.github/workflows/ci.yml`) | On every push, GitHub applies all migrations to a fresh Postgres and runs the server tests, then typechecks, lints and builds the client | Runs automatically; see the repo's Actions tab |
 
 ---
 
